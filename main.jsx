@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Trophy, Users, Sword, BarChart3, PlusCircle, Calendar, DollarSign, CheckCircle2, ChevronDown, ChevronUp, Check, Shield, History, ArrowDownUp, Clock, ListOrdered, ArrowLeft, ArrowRight, CheckSquare } from 'lucide-react';
+import { Trophy, Users, Sword, BarChart3, PlusCircle, Calendar, DollarSign, CheckCircle2, ChevronDown, ChevronUp, Check, Shield, History, ArrowDownUp, Clock, ListOrdered, ArrowLeft, ArrowRight, CheckSquare, Globe } from 'lucide-react';
 
 const MAP_POOL = [
   { name: "Mirage", weight: 70 }, { name: "Nuke", weight: 60 }, { name: "Ancient", weight: 50 },
@@ -7,12 +7,27 @@ const MAP_POOL = [
   { name: "Anubis", weight: 10 }
 ];
 
-const TEAM_TIER_CONFIG = [
-  { label: '一线', count: 10, min: 1700, max: 1950, color: 'text-orange-500' },
-  { label: '二线', count: 20, min: 1500, max: 1700, color: 'text-purple-500' },
-  { label: '三线', count: 26, min: 1300, max: 1500, color: 'text-blue-500' },
-  { label: '四线', count: 20, min: 1100, max: 1300, color: 'text-green-500' },
-  { label: '五线', count: 12, min: 900, max: 1100, color: 'text-gray-400' },
+const INITIAL_SOURCE = [
+  { n: "Vitality", r: "EU", v: 2090 }, { n: "Natus Vincere", r: "EU", v: 1925 }, { n: "FUT", r: "EU", v: 1882 }, { n: "Astralis", r: "EU", v: 1867 }, { n: "The MongolZ", r: "AS", v: 1858 },
+  { n: "FURIA", r: "AM", v: 1852 }, { n: "MOUZ", r: "EU", v: 1847 }, { n: "Falcons", r: "EU", v: 1813 }, { n: "Aurora", r: "EU", v: 1810 }, { n: "PARIVISION", r: "EU", v: 1791 },
+  { n: "Spirit", r: "EU", v: 1728 }, { n: "G2", r: "EU", v: 1676 }, { n: "3DMAX", r: "EU", v: 1598 }, { n: "paiN", r: "AM", v: 1596 }, { n: "9z", r: "AM", v: 1594 },
+  { n: "B8", r: "EU", v: 1590 }, { n: "Legacy", r: "AM", v: 1529 }, { n: "BetBoom", r: "EU", v: 1519 }, { n: "Monte", r: "EU", v: 1515 }, { n: "BIG", r: "EU", v: 1499 },
+  { n: "HEROIC", r: "EU", v: 1493 }, { n: "GamerLegion", r: "EU", v: 1490 }, { n: "Alliance", r: "EU", v: 1469 }, { n: "MIBR", r: "AM", v: 1467 }, { n: "SINNERS", r: "EU", v: 1461 },
+  { n: "FOKUS", r: "EU", v: 1452 }, { n: "M80", r: "AM", v: 1447 }, { n: "NRG", r: "AM", v: 1429 }, { n: "EYEBALLERS", r: "EU", v: 1422 }, { n: "Ninjas in Pyjamas", r: "EU", v: 1422 },
+  { n: "Nemesis", r: "EU", v: 1403 }, { n: "Sharks", r: "AM", v: 1394 }, { n: "K27", r: "EU", v: 1393 }, { n: "FaZe", r: "EU", v: 1380 }, { n: "Gaimin Gladiators", r: "AM", v: 1374 },
+  { n: "Nemiga", r: "EU", v: 1371 }, { n: "TYLOO", r: "AS", v: 1370 }, { n: "1win", r: "EU", v: 1358 }, { n: "BESTIA", r: "AM", v: 1345 }, { n: "HOTU", r: "EU", v: 1342 },
+  { n: "Liquid", r: "AM", v: 1339 }, { n: "illwill", r: "EU", v: 1338 }, { n: "Gentle Mates", r: "EU", v: 1335 }, { n: "100 Thieves", r: "EU", v: 1328 }, { n: "magic", r: "EU", v: 1313 },
+  { n: "Passion UA", r: "AM", v: 1310 }, { n: "Voca", r: "AM", v: 1309 }, { n: "9INE", r: "EU", v: 1309 }, { n: "Lynn Vision", r: "AS", v: 1306 }, { n: "BET-M", r: "EU", v: 1299 },
+  { n: "ODDIK", r: "AM", v: 1294 }, { n: "TDK", r: "EU", v: 1292 }, { n: "ShindeN", r: "AM", v: 1283 }, { n: "THUNDER dOWNUNDER", r: "AS", v: 1279 }, { n: "Inner Circle", r: "EU", v: 1277 },
+  { n: "Fluxo", r: "AM", v: 1276 }, { n: "RED Canids", r: "AM", v: 1275 }, { n: "Betclic", r: "EU", v: 1272 }, { n: "Wildcard", r: "AM", v: 1265 }, { n: "ARCRED", r: "EU", v: 1255 },
+  { n: "Tricked", r: "EU", v: 1249 }, { n: "FlyQuest", r: "AS", v: 1242 }, { n: "AM", r: "EU", v: 1238 }, { n: "Marsborne", r: "AM", v: 1236 }, { n: "Sashi", r: "EU", v: 1233 },
+  { n: "Nuclear TigeRES", r: "EU", v: 1233 }, { n: "Imperial", r: "AM", v: 1232 }, { n: "OG", r: "EU", v: 1229 }, { n: "Johnny Speeds", r: "EU", v: 1226 }, { n: "Eternal Fire", r: "EU", v: 1223 },
+  { n: "ECSTATIC", r: "EU", v: 1219 }, { n: "WW", r: "EU", v: 1215 }, { n: "BC.Game", r: "EU", v: 1207 }, { n: "AaB", r: "EU", v: 1190 }, { n: "Acend", r: "EU", v: 1188 },
+  { n: "JiJieHao", r: "EU", v: 1179 }, { n: "SPARTA", r: "EU", v: 1171 }, { n: "SemperFi", r: "AS", v: 1170 }, { n: "The Huns", r: "AS", v: 1163 }, { n: "QWENTRY", r: "EU", v: 1160 },
+  { n: "ex-RUBY", r: "EU", v: 1157 }, { n: "CYBERSHOKE", r: "EU", v: 1148 }, { n: "fnatic", r: "EU", v: 1147 }, { n: "Ursa", r: "EU", v: 1146 }, { n: "MOUZ NXT", r: "EU", v: 1144 },
+  { n: "NEXVOID", r: "AS", v: 1139 }, { n: "FAVBET", r: "EU", v: 1136 }, { n: "Sangal", r: "EU", v: 1129 }, { n: "Metizport", r: "EU", v: 1126 }, { n: "Phantom", r: "EU", v: 1122 },
+  { n: "Rebels", r: "EU", v: 1117 }, { n: "ESC", r: "EU", v: 1114 }, { n: "Galorys", r: "AM", v: 1112 }, { n: "KOLESIE", r: "EU", v: 1110 }, { n: "Bounty Hunters", r: "AM", v: 1107 },
+  { n: "ENCE", r: "EU", v: 1105 }, { n: "Chinggis Warriors", r: "AS", v: 1099 }, { n: "Rare Atom", r: "AS", v: 1095 }, { n: "Fake do Biru", r: "AM", v: 1092 }, { n: "5star", r: "AS", v: 1070 }
 ];
 
 const TOURNAMENT_TIERS = {
@@ -35,26 +50,14 @@ const FORMATS = {
 };
 
 const PLACEMENT_WEIGHTS = {
-  "1st": 4000, "2nd": 1700, "3rd": 800, "4th": 500, "3rd-4th": 680,
-  "5th-6th": 280, "7th-8th": 200, "5th-8th": 320,
+  "1st": 4000, "2nd": 1700, "3rd": 1000, "4th": 600, "3rd-4th": 800,
+  "5th-6th": 400, "7th-8th": 300, "5th-8th": 350,
   "9th-11th": 190, "12th-14th": 125, "15th-16th": 90,
   "17th-19th": 70, "20th-22nd": 50, "23rd-24th": 40,
   "25th-27th": 20, "28th-30th": 10, "31st-32nd": 2.5,
   "9th-12th": 100, "13th-16th": 40,
-  "9th-16th": 70, "17th-24th": 30, "25th-32nd": 10
+  "9th-16th": 70, "17th-24th": 30
 };
-
-const REAL_CS2_TEAMS = [
-  "Natus Vincere", "G2 Esports", "Team Spirit", "Team Vitality", "MOUZ", "FaZe Clan", "Team Liquid", "FURIA", "HEROIC", "Virtus.pro",
-  "Complexity", "Astralis", "The MongolZ", "Team Falcons", "Eternal Fire", "3DMAX", "BIG", "SAW", "fnatic", "MIBR",
-  "FlyQuest", "paiN Gaming", "Cloud9", "Ninjas in Pyjamas", "ENCE", "9z Team", "BetBoom Team", "Nemiga", "GamerLegion", "Wildcard",
-  "Imperial", "Monte", "B8", "BLEED", "Sashi", "AMKAL", "KOI", "PARIVISION", "Aurora", "TYLOO",
-  "Nouns", "Metizport", "Rebels", "Lynn Vision", "9INE", "Rooster", "Into the Breach", "ECSTATIC", "BOSS", "TSM",
-  "Sangal", "Zero Tenacity", "Sampi", "SINNERS", "Apeks", "Gaimin Gladiators", "Guild Eagles", "500", "ALTERNATE aTTaX", "Endpoint",
-  "Space", "Enterprise", "Team Secret", "Elevate", "M80", "Legacy", "BESTIA", "Fluxo", "ODDIK", "RED Canids",
-  "Sharks", "KRU", "W7M", "Case", "Galorys", "Solid", "Intense", "Corinthians", "Hype", "Hawks",
-  "Dusty Roots", "Yawara", "2GAME", "inSanitY", "Nitro", "Bounty Hunters", "E-Xolos LAZER", "Galacticos"
-];
 
 // Tailwind Scrollbar Utilities
 const SCROLLBAR = "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-[#0f172a] [&::-webkit-scrollbar-track]:rounded [&::-webkit-scrollbar-thumb]:bg-[#1e3a8a] [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb:hover]:bg-[#2563eb]";
@@ -78,23 +81,6 @@ const pickMaps = (count) => {
     }
   }
   return picked;
-};
-
-const generateTeams = () => {
-  let teams = [];
-  let teamIndex = 0;
-  TEAM_TIER_CONFIG.forEach(tier => {
-    for (let i = 0; i < tier.count; i++) {
-      if (teamIndex >= REAL_CS2_TEAMS.length) break;
-      teams.push({
-        id: `t-${teamIndex}`, name: String(REAL_CS2_TEAMS[teamIndex]),
-        vrs: Math.floor(Math.random() * (tier.max - tier.min + 1)) + tier.min,
-        stamina: 100, wins: 0, losses: 0, prizeTotal: 0, honors: []
-      });
-      teamIndex++;
-    }
-  });
-  return teams.sort((a, b) => b.vrs - a.vrs);
 };
 
 // --- Engine ---
@@ -407,13 +393,6 @@ const playMatchEngineInstance = (m, state) => {
   return m;
 };
 
-const getSwissElimTag = (baseSize, wins) => {
-  if (baseSize === 24) return wins === 2 ? '25th-27th' : wins === 1 ? '28th-30th' : '31st-32nd';
-  if (baseSize === 16) return wins === 2 ? '17th-19th' : wins === 1 ? '20th-22nd' : '23rd-24th';
-  if (baseSize === 8) return wins === 2 ? '9th-11th' : wins === 1 ? '12th-14th' : '15th-16th';
-  return 'eliminated';
-};
-
 const processDayTick = (tour, state, dateStr) => {
   if (tour.status !== 'ACTIVE') return;
   if (tour.rest > 0) { tour.rest--; return; }
@@ -473,7 +452,7 @@ const processDayTick = (tour, state, dateStr) => {
       if(tour.formatId === 'EPL' && tour.currentStageIdx === 1) b = 8;
       
       stg.records.filter(r=>r.l===3).forEach(r => {
-          let tag = getSwissElimTag(b, r.w);
+          let tag = r.w===2 ? `${b+1}th-${b+3}rd` : r.w===1 ? `${b+4}th-${b+6}th` : `${b+7}th-${b+8}th`;
           tour.placements.push({ team: r.team, tag, vrsBefore: state.vrsMap[r.team.id] || 1000 });
       });
       tour.advancedPool = stg.records.filter(r=>r.w===3).map(r=>r.team);
@@ -585,11 +564,11 @@ const UnifiedMatchNode = ({ m }) => {
 
   const getTextA = () => {
     if (!isPlayed) return 'text-slate-300';
-    return isAWin ? 'text-green-400' : 'text-red-600';
+    return isAWin ? 'text-green-400' : 'text-red-600 opacity-80';
   };
   const getTextB = () => {
     if (!isPlayed) return 'text-slate-300';
-    return isBWin ? 'text-green-400' : 'text-red-600';
+    return isBWin ? 'text-green-400' : 'text-red-600 opacity-80';
   };
   const getBgA = () => {
     if (!isPlayed) return '';
@@ -805,7 +784,7 @@ const TournamentStandingsTable = ({ standings, onTeamClick }) => (
   <div className="bg-slate-900/80 rounded-2xl border border-slate-800 overflow-hidden">
     <div className="p-6 border-b border-slate-800 flex items-center gap-2">
       <Trophy className="text-yellow-500" />
-      <h2 className="text-xl font-bold">Tournament Final Standings & Earnings</h2>
+      <h2 className="text-xl font-bold text-slate-100">Tournament Final Standings & Earnings</h2>
     </div>
     <div className={`overflow-x-auto ${SCROLLBAR}`}>
       <table className="w-full text-left text-sm">
@@ -823,12 +802,12 @@ const TournamentStandingsTable = ({ standings, onTeamClick }) => (
           {(standings || []).map((s, i) => (
             <tr key={i} className="hover:bg-slate-800/30 transition-colors">
               <td className="px-6 py-3 font-bold text-slate-300">{s.placement}</td>
-              <td className="px-6 py-3 font-bold cursor-pointer hover:text-blue-400 hover:underline" onClick={() => onTeamClick(s.team)}>{s.team.name}</td>
+              <td className="px-6 py-3 font-bold cursor-pointer hover:text-blue-400 hover:underline text-slate-200" onClick={() => onTeamClick(s.team)}>{s.team.name}</td>
               <td className="px-6 py-3 text-right text-green-500 font-mono font-bold">${(s.prize || 0).toLocaleString()}</td>
               <td className="px-6 py-3 font-mono text-slate-500">{s.vrsBefore}</td>
               <td className="px-6 py-3 font-mono text-white">{s.vrsAfter}</td>
-              <td className={`px-6 py-3 font-mono font-bold text-right ${s.vrsAfter-s.vrsBefore > 0 ? 'text-green-500' : s.vrsAfter-s.vrsBefore < 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                {s.vrsAfter-s.vrsBefore > 0 ? '+' : ''}{s.vrsAfter-s.vrsBefore}
+              <td className={`px-6 py-3 font-mono font-bold text-right ${s.vrsAfter-s.vrsBefore >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {s.vrsAfter-s.vrsBefore >= 0 ? '+' : ''}{s.vrsAfter-s.vrsBefore}
               </td>
             </tr>
           ))}
@@ -842,7 +821,7 @@ const TournamentParticipantsTable = ({ participants, onTeamClick }) => (
   <div className="bg-slate-900/80 rounded-2xl border border-slate-800 overflow-hidden">
     <div className="p-6 border-b border-slate-800 flex items-center gap-2">
       <Users className="text-blue-500" />
-      <h2 className="text-xl font-bold">Invited Teams List</h2>
+      <h2 className="text-xl font-bold text-slate-100">Invited Teams List</h2>
     </div>
     <div className={`overflow-x-auto max-h-[60vh] ${SCROLLBAR}`}>
       <table className="w-full text-left text-sm">
@@ -853,7 +832,7 @@ const TournamentParticipantsTable = ({ participants, onTeamClick }) => (
           {(participants || []).map((t, i) => (
             <tr key={i} className="hover:bg-slate-800/30 transition-colors">
               <td className="px-6 py-3 font-mono text-slate-400 font-bold">#{t.seed}</td>
-              <td className="px-6 py-3 font-bold cursor-pointer hover:text-blue-400 hover:underline" onClick={() => onTeamClick(t)}>{t.name}</td>
+              <td className="px-6 py-3 font-bold cursor-pointer hover:text-blue-400 text-slate-200 hover:underline" onClick={() => onTeamClick(t)}>{t.name}</td>
             </tr>
           ))}
         </tbody>
@@ -869,7 +848,7 @@ const TournamentPredictTable = ({ tour, state }) => {
     <div className="bg-slate-900/80 rounded-2xl border border-slate-800 overflow-hidden">
       <div className="p-6 border-b border-slate-800 flex items-center gap-2">
         <Clock className="text-blue-500" />
-        <h2 className="text-xl font-bold">VRS 邀请名额预测 (VRS Invitation Prediction)</h2>
+        <h2 className="text-xl font-bold text-slate-100">VRS 邀请名额预测 (VRS Invitation Prediction)</h2>
       </div>
       <div className={`overflow-x-auto max-h-[60vh] ${SCROLLBAR}`}>
         <table className="w-full text-left text-sm">
@@ -880,7 +859,7 @@ const TournamentPredictTable = ({ tour, state }) => {
             {predicted.map((t, i) => (
               <tr key={i} className="hover:bg-slate-800/30 transition-colors">
                 <td className="px-6 py-3 font-mono text-slate-400 font-bold">#{i+1}</td>
-                <td className="px-6 py-3 font-bold">{t.name}</td>
+                <td className="px-6 py-3 font-bold text-slate-200">{t.name}</td>
                 <td className="px-6 py-3 font-mono text-orange-400">{state.vrsMap[t.id]}</td>
               </tr>
             ))}
@@ -894,7 +873,9 @@ const TournamentPredictTable = ({ tour, state }) => {
 // --- React App Component ---
 export default function App() {
   const [state, setState] = useState(() => {
-    let t = generateTeams();
+    let t = INITIAL_SOURCE.map((x, i) => ({
+       id: `t-${i}`, name: x.n, region: x.r, vrs: x.v, stamina: 100, wins: 0, losses: 0, prizeTotal: 0, honors: []
+    }));
     let vMap = {}, sMap = {};
     t.forEach(x => { vMap[x.id] = x.vrs; sMap[x.id] = x.stamina; });
     return {
@@ -908,6 +889,7 @@ export default function App() {
   const [config, setConfig] = useState({ format: 'MAJOR', tier: 'HIGHEST', nameInput: '', invDate: '2026-01-02' });
   const [errorMsg, setErrorMsg] = useState('');
   const [sortMode, setSortMode] = useState('VRS');
+  const [regionFilter, setRegionFilter] = useState('Global');
   const [activeTourId, setActiveTourId] = useState(null);
   const [activeStageIdx, setActiveStageIdx] = useState('standings');
   const [selectedTeamId, setSelectedTeamId] = useState(null);
@@ -930,10 +912,22 @@ export default function App() {
   }, [state.teams, state.vrsMap, state.staminaMap, selectedTeamId]);
 
   const displayTeams = useMemo(() => {
-    let list = state.teams.map((t) => ({ ...t, vrs: state.vrsMap[t.id], stamina: state.staminaMap[t.id] })).sort((a,b)=>b.vrs-a.vrs).map((t,i)=>({...t, globalRank: i+1}));
-    if(sortMode === 'PRIZE') list.sort((a,b) => (b.prizeTotal||0) !== (a.prizeTotal||0) ? (b.prizeTotal||0) - (a.prizeTotal||0) : b.vrs - a.vrs);
-    return list;
-  }, [state, sortMode]);
+    let list = state.teams.map(t => ({ ...t, vrs: state.vrsMap[t.id], stamina: state.staminaMap[t.id] }))
+                          .sort((a,b) => b.vrs - a.vrs);
+    list.forEach((t, i) => t.globalRank = i + 1);
+
+    let filtered = regionFilter === 'Global' ? list : list.filter(t => t.region === regionFilter);
+    if (regionFilter !== 'Global') {
+        filtered.forEach((t, i) => t.regionalRank = i + 1);
+    }
+
+    if (sortMode === 'PRIZE') {
+        filtered.sort((a,b) => (b.prizeTotal||0) - (a.prizeTotal||0) || b.vrs - a.vrs);
+    } else {
+        filtered.sort((a,b) => b.vrs - a.vrs); 
+    }
+    return filtered;
+  }, [state.teams, state.vrsMap, state.staminaMap, regionFilter, sortMode]);
 
   const handleAdvanceDay = () => {
     setState(prev => {
@@ -1067,7 +1061,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
       <nav className="max-w-[1400px] mx-auto flex flex-wrap items-center justify-between gap-4 mb-8 bg-slate-900/80 p-4 rounded-2xl shadow-xl border border-slate-800">
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setView('ranking')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'ranking' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Trophy size={16}/> 榜单</button>
+          <button onClick={() => setView('ranking')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'ranking' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Globe size={16}/> 榜单</button>
           <button onClick={() => setView('organize')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'organize' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><PlusCircle size={16}/> 办赛</button>
           <button onClick={() => setView('history')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'history' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><ListOrdered size={16}/> 赛事库</button>
           <button onClick={() => { setView('ongoing'); setScheduleDate(state.currentDate); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'ongoing' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Calendar size={16}/> Ongoing</button>
@@ -1084,23 +1078,35 @@ export default function App() {
         {view === 'ranking' && (
           <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-slate-800 bg-slate-900/80 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-2"><BarChart3 className="text-blue-500" /><h2 className="text-xl font-bold">世界战队 VRS 排名 (Top 88)</h2></div>
-              <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-1">
-                <button onClick={() => setSortMode('VRS')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'VRS' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>按 VRS 排序</button>
-                <button onClick={() => setSortMode('PRIZE')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'PRIZE' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>按赏金排序</button>
+              <div className="flex items-center gap-2"><BarChart3 className="text-blue-500" /><h2 className="text-xl font-bold text-slate-100">世界战队 VRS 排名 (Top 100)</h2></div>
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                 <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-1">
+                   {['Global', 'EU', 'AM', 'AS'].map(r => (
+                     <button key={r} onClick={() => setRegionFilter(r)} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${regionFilter === r ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>{r}</button>
+                   ))}
+                 </div>
+                 <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-1">
+                   <button onClick={() => setSortMode('VRS')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'VRS' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'}`}>按 VRS</button>
+                   <button onClick={() => setSortMode('PRIZE')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'PRIZE' ? 'bg-green-600 text-white' : 'text-slate-400 hover:text-white'}`}>按赏金</button>
+                 </div>
               </div>
             </div>
             <div className={`overflow-x-auto max-h-[75vh] ${SCROLLBAR}`}>
               <table className="w-full text-left">
                 <thead className="bg-slate-900 text-slate-500 text-xs uppercase sticky top-0 z-10 shadow-md">
-                  <tr><th className="px-6 py-4">Rank</th><th className="px-6 py-4">Team</th><th className="px-6 py-4">Stamina</th><th className="px-6 py-4"><div className="flex items-center gap-1">VRS Points {sortMode === 'VRS' && <ArrowDownUp size={12}/>}</div></th><th className="px-6 py-4 text-right"><div className="flex items-center justify-end gap-1">Career Earnings {sortMode === 'PRIZE' && <ArrowDownUp size={12}/>}</div></th></tr>
+                  <tr><th className="px-6 py-4">Rank</th><th className="px-6 py-4 text-center">Region</th><th className="px-6 py-4">Team</th><th className="px-6 py-4"><div className="flex items-center gap-1">VRS Points {sortMode === 'VRS' && <ArrowDownUp size={12}/>}</div></th><th className="px-6 py-4 text-right"><div className="flex items-center justify-end gap-1">Career Earnings {sortMode === 'PRIZE' && <ArrowDownUp size={12}/>}</div></th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
                   {displayTeams.map((team) => (
                     <tr key={team.id} className="hover:bg-slate-800/50 transition-colors">
-                      <td className="px-6 py-4 font-mono text-slate-500 font-bold">#{team.globalRank}</td>
-                      <td className="px-6 py-4 font-bold cursor-pointer hover:text-blue-400 hover:underline" onClick={() => { setSelectedTeamId(team.id); setView('team'); }}>{team.name}</td>
-                      <td className="px-6 py-4"><div className="w-16 h-2 bg-slate-800 rounded overflow-hidden"><div className={`h-full transition-all ${team.stamina > 50 ? 'bg-green-500' : team.stamina > 20 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{width: `${team.stamina}%`}}/></div><div className="text-[10px] text-slate-500 font-mono mt-0.5">{team.stamina}/100</div></td>
+                      <td className="px-6 py-4 font-mono">
+                         <span className="text-slate-400 font-bold">#{team.globalRank}</span>
+                         {team.regionalRank && <span className="ml-2 text-blue-500 text-xs font-bold">({regionFilter} #{team.regionalRank})</span>}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                         <span className="text-[10px] bg-slate-800 px-2 py-1 rounded-md font-black text-slate-400">{team.region}</span>
+                      </td>
+                      <td className="px-6 py-4 font-bold cursor-pointer hover:text-blue-400 text-slate-200 hover:underline" onClick={() => { setSelectedTeamId(team.id); setView('team'); }}>{team.name}</td>
                       <td className="px-6 py-4 text-orange-400 font-mono font-bold">{team.vrs}</td>
                       <td className="px-6 py-4 text-right text-green-500 font-mono font-bold">${(team.prizeTotal || 0).toLocaleString()}</td>
                     </tr>
@@ -1115,7 +1121,7 @@ export default function App() {
           <div className="max-w-4xl mx-auto space-y-6">
             <div className="bg-slate-900/80 border border-slate-800 p-8 rounded-3xl flex flex-col items-center shadow-2xl">
               <Shield size={64} className="text-blue-500 mb-4" />
-              <h2 className="text-4xl font-black mb-2 tracking-wide">{selectedTeam.name}</h2>
+              <h2 className="text-4xl font-black mb-2 tracking-wide text-slate-100">{selectedTeam.name}</h2>
               <div className="text-orange-500 font-mono text-2xl font-bold mb-6">VRS: {selectedTeam.vrs} <span className="text-xs text-slate-500 ml-2">STM: {selectedTeam.stamina}</span></div>
               <div className="flex gap-12 text-slate-400 w-full justify-center border-t border-slate-800/80 pt-6">
                 <div className="text-center"><div className="text-xs uppercase tracking-widest mb-1 text-slate-500 font-bold">Global Rank</div><div className="text-2xl font-black text-white">#{displayTeams.find(t=>t.id===selectedTeam.id)?.globalRank}</div></div>
@@ -1124,7 +1130,7 @@ export default function App() {
             </div>
             
             <div className="bg-slate-900/80 border border-slate-800 p-8 rounded-3xl shadow-xl">
-               <h3 className="text-xl font-bold flex items-center gap-2 mb-6"><Trophy className="text-yellow-500"/> 历史荣誉记录 (Historical Honors)</h3>
+               <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-100"><Trophy className="text-yellow-500"/> 历史荣誉记录 (Historical Honors)</h3>
                {(!selectedTeam.honors || selectedTeam.honors.length === 0) ? <div className="text-slate-500 text-center py-12 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">暂无卓越荣誉</div> :
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    {selectedTeam.honors.map((h, i) => {
@@ -1142,7 +1148,7 @@ export default function App() {
             </div>
 
             <div className="bg-slate-900/80 border border-slate-800 p-8 rounded-3xl shadow-xl mt-6">
-                <h3 className="text-xl font-bold flex items-center gap-2 mb-6"><ListOrdered className="text-blue-500"/> 比赛记录 (Tournament History)</h3>
+                <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-100"><ListOrdered className="text-blue-500"/> 比赛记录 (Tournament History)</h3>
                 {teamTournaments.length === 0 ? <div className="text-slate-500 text-center py-12 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">暂无比赛记录</div> :
                 <div className={`overflow-x-auto ${SCROLLBAR}`}>
                     <table className="w-full text-left text-sm">
@@ -1175,7 +1181,7 @@ export default function App() {
         {(view === 'ongoing' || view === 'formal') && (
           <div className="max-w-4xl mx-auto bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
             <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
-              <h2 className="text-2xl font-black flex items-center gap-2"><Calendar className="text-blue-500"/> {view === 'ongoing' ? 'Ongoing Events (待办/未来赛程)' : 'Formal Events (已结束赛程)'}</h2>
+              <h2 className="text-2xl font-black flex items-center gap-2 text-slate-100"><Calendar className="text-blue-500"/> {view === 'ongoing' ? 'Ongoing Events (待办/未来赛程)' : 'Formal Events (已结束赛程)'}</h2>
               <div className="flex items-center gap-2">
                  <button onClick={() => changeScheduleDate(-1)} className="bg-slate-800 p-2 rounded hover:bg-slate-700 transition"><ArrowLeft size={16}/></button>
                  <input type="date" value={scheduleDate} onChange={e=>setScheduleDate(e.target.value)} className="bg-slate-950 border border-slate-700 text-white px-4 py-2 rounded-lg outline-none font-mono"/>
@@ -1218,7 +1224,7 @@ export default function App() {
             </div>
 
             {Object.keys(groupedHistory).length === 0 ? (
-              <div className="p-12 text-center text-slate-500 bg-slate-900/50 rounded-2xl border border-slate-800 shadow-inner">暂无已完结赛事记录。</div>
+              <div className="p-12 text-center text-slate-500 bg-slate-900/50 rounded-2xl border border-slate-800 shadow-inner">暂无赛事记录。</div>
             ) : (
               Object.entries(groupedHistory).map(([formatId, formatGroup]) => {
                 let sortedTiers = TIER_ORDER.filter(tId => formatGroup[tId] && (historyTierFilter === 'ALL' || historyTierFilter === tId));
@@ -1260,7 +1266,7 @@ export default function App() {
 
         {view === 'organize' && (
           <div className="max-w-2xl mx-auto bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
-            <h2 className="text-3xl font-black mb-8 flex items-center gap-3"><span className="bg-blue-500/20 text-blue-500 p-2 rounded-xl"><Calendar /></span> 创建世界级赛事</h2>
+            <h2 className="text-3xl font-black mb-8 flex items-center gap-3 text-slate-100"><span className="bg-blue-500/20 text-blue-500 p-2 rounded-xl"><Calendar /></span> 创建世界级赛事</h2>
             <div className="space-y-6">
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">1. 基础赛制</label>
@@ -1304,7 +1310,7 @@ export default function App() {
           <div className="space-y-6">
             <div className="bg-slate-900 p-8 rounded-2xl border border-slate-800 text-center relative overflow-hidden shadow-2xl">
               <div className="absolute top-0 left-0 w-full h-1 bg-blue-500" />
-              <h2 className="text-3xl font-black mb-2">{activeTour.name}</h2>
+              <h2 className="text-3xl font-black mb-2 text-slate-100">{activeTour.name}</h2>
               <div className="flex justify-center gap-6 text-slate-400 text-xs mb-6 font-mono">
                 <span>INV: {activeTour.invDate}</span><span>START: {activeTour.startDate}</span>
                 <span className="text-green-500">PRIZE: ${(activeTour.prize || 0).toLocaleString()}</span>
