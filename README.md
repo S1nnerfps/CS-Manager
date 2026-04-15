@@ -1,0 +1,23 @@
+# Counter-Strike Event Manager
+
+你也看CS？看腻了固有的比赛？等烦了主办方发布比赛？现在机会就在你眼前！
+
+## Release Version 0.0
+
+$2026-4-15$
+
+发布了 Counter-Strike Event Manager。
+
+链接至 [cs-manager.top](https://cs-manager.top)。
+
+- 发布“排名”板块，模仿 VRS 积分进行排名的实时维护，同时维护了赏金系统，支持按照赏金排序。
+- 发布时间（日期）系统。
+- 发布“办赛”板块，现在可以创建比赛了。
+  - 开放 Major、IEM、EWC、BLAST、EPL 五种赛制可供选择。
+  - 开放 HIGHEST、Tier S、Tier 1、Tier 2、Tier 3、Tier Open 六种级别可供选择。
+  - 开放邀请日期填写。
+  - 根据前三项选择，自动设置并生成赛程、邀请名单、奖金池。
+- 发布“赛事库”板块，可以查看所有已创办的赛事。
+- 发布“Ongoing Event”、“Formal Event”板块，可以查看赛程。
+- 发布赛事界面，可以查看实时赛况、邀请名单、最终榜单、单图得分、比赛日期等。
+- 发布战队详情界面，在部分页面点击战队名称可以进入此页面。此页面包含该战队的 VRS 积分、世界排名、累计赏金、历史荣誉、参赛记录等。
