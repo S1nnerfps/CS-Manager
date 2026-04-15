@@ -49,12 +49,13 @@ const FORMATS = {
   EPL: { id: 'EPL', name: 'EPL', teams: 24, basePrize: 800000, allowedTiers: ['HIGHEST', 'TIER_S', 'TIER_1', 'TIER_2', 'TIER_3', 'TIER_OPEN'] },
 };
 
+// 完美递减比例权重，确保底层名次也有极小份羹
 const PLACEMENT_WEIGHTS = {
-  "1st": 4000, "2nd": 1700, "3rd": 1000, "4th": 600, "3rd-4th": 800,
+  "1st": 5000, "2nd": 2000, "3rd": 1000, "4th": 800, "3rd-4th": 900,
   "5th-6th": 400, "7th-8th": 300, "5th-8th": 350,
-  "9th-11th": 190, "12th-14th": 125, "15th-16th": 90,
-  "17th-19th": 70, "20th-22nd": 50, "23rd-24th": 40,
-  "25th-27th": 20, "28th-30th": 10, "31st-32nd": 2.5,
+  "9th-11th": 150, "12th-14th": 100, "15th-16th": 75,
+  "17th-19th": 50, "20th-22nd": 35, "23rd-24th": 25,
+  "25th-27th": 15, "28th-30th": 10, "31st-32nd": 3.5,
   "9th-12th": 100, "13th-16th": 40,
   "9th-16th": 70, "17th-24th": 30
 };
@@ -387,6 +388,13 @@ const finishTournament = (tour, state) => {
   }
 };
 
+const getSwissElimTag = (b, w) => {
+  if (b === 24) return w === 2 ? "25th-27th" : w === 1 ? "28th-30th" : "31st-32nd";
+  if (b === 16) return w === 2 ? "17th-19th" : w === 1 ? "20th-22nd" : "23rd-24th";
+  if (b === 8)  return w === 2 ? "9th-11th" : w === 1 ? "12th-14th" : "15th-16th";
+  return "Unknown";
+};
+
 const playMatchEngineInstance = (m, state) => {
   let res = playMatchEngine(m.tA, m.tB, state, m.isBO5);
   Object.assign(m, res); m.status = 'PLAYED';
@@ -452,7 +460,7 @@ const processDayTick = (tour, state, dateStr) => {
       if(tour.formatId === 'EPL' && tour.currentStageIdx === 1) b = 8;
       
       stg.records.filter(r=>r.l===3).forEach(r => {
-          let tag = r.w===2 ? `${b+1}th-${b+3}rd` : r.w===1 ? `${b+4}th-${b+6}th` : `${b+7}th-${b+8}th`;
+          let tag = getSwissElimTag(b, r.w);
           tour.placements.push({ team: r.team, tag, vrsBefore: state.vrsMap[r.team.id] || 1000 });
       });
       tour.advancedPool = stg.records.filter(r=>r.w===3).map(r=>r.team);
@@ -564,11 +572,11 @@ const UnifiedMatchNode = ({ m }) => {
 
   const getTextA = () => {
     if (!isPlayed) return 'text-slate-300';
-    return isAWin ? 'text-green-400' : 'text-red-600 opacity-80';
+    return isAWin ? 'text-green-400' : 'text-red-500 opacity-80';
   };
   const getTextB = () => {
     if (!isPlayed) return 'text-slate-300';
-    return isBWin ? 'text-green-400' : 'text-red-600 opacity-80';
+    return isBWin ? 'text-green-400' : 'text-red-500 opacity-80';
   };
   const getBgA = () => {
     if (!isPlayed) return '';
@@ -1164,8 +1172,8 @@ export default function App() {
                                     <td className="px-4 py-3 font-bold text-slate-200">{tt.name}</td>
                                     <td className="px-4 py-3 font-bold text-slate-400">{standing.placement}</td>
                                     <td className="px-4 py-3 text-right text-green-500 font-mono">${(standing.prize || 0).toLocaleString()}</td>
-                                    <td className={`px-4 py-3 text-right font-mono font-bold ${standing.vrsAfter - standing.vrsBefore > 0 ? 'text-green-500' : standing.vrsAfter - standing.vrsBefore < 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                                        {standing.vrsAfter - standing.vrsBefore > 0 ? '+' : ''}{standing.vrsAfter - standing.vrsBefore}
+                                    <td className={`px-4 py-3 text-right font-mono font-bold ${standing.vrsAfter - standing.vrsBefore >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                        {standing.vrsAfter - standing.vrsBefore >= 0 ? '+' : ''}{standing.vrsAfter - standing.vrsBefore}
                                     </td>
                                 </tr>
                             );
