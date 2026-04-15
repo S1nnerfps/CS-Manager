@@ -1,4 +1,3 @@
-//强制修改
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Trophy, Users, Sword, BarChart3, PlusCircle, Calendar, DollarSign, CheckCircle2, ChevronDown, ChevronUp, Check, Shield, History, ArrowDownUp, Clock, ListOrdered, ArrowLeft, ArrowRight, CheckSquare, Globe } from 'lucide-react';
 
@@ -50,7 +49,6 @@ const FORMATS = {
   EPL: { id: 'EPL', name: 'EPL', teams: 24, basePrize: 800000, allowedTiers: ['HIGHEST', 'TIER_S', 'TIER_1', 'TIER_2', 'TIER_3', 'TIER_OPEN'] },
 };
 
-// 完美递减比例权重，确保底层名次也有极小份羹
 const PLACEMENT_WEIGHTS = {
   "1st": 5000, "2nd": 2000, "3rd": 1000, "4th": 800, "3rd-4th": 900,
   "5th-6th": 400, "7th-8th": 300, "5th-8th": 350,
@@ -61,10 +59,8 @@ const PLACEMENT_WEIGHTS = {
   "9th-16th": 70, "17th-24th": 30
 };
 
-// Tailwind Scrollbar Utilities
 const SCROLLBAR = "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-[#0f172a] [&::-webkit-scrollbar-track]:rounded [&::-webkit-scrollbar-thumb]:bg-[#1e3a8a] [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb:hover]:bg-[#2563eb]";
 
-// --- Utilities ---
 const calculatePrize = (formatId, tierId) => Math.round((FORMATS[formatId]?.basePrize || 0) * (TOURNAMENT_TIERS[tierId]?.multiplier || 0));
 
 const addDays = (ymd, days) => {
@@ -85,7 +81,6 @@ const pickMaps = (count) => {
   return picked;
 };
 
-// --- Engine ---
 const playMatchEngine = (tA, tB, state, isBO5 = false) => {
   let vrsA = state.vrsMap[tA.id] || 1000, vrsB = state.vrsMap[tB.id] || 1000;
   const probA = vrsA / (vrsA + vrsB);
@@ -1068,8 +1063,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
-      <nav className="max-w-[1400px] mx-auto flex flex-wrap items-center justify-between gap-4 mb-8 bg-slate-900/80 p-4 rounded-2xl shadow-xl border border-slate-800">
-        <div className="flex flex-wrap gap-2">
+      <div className="max-w-[1400px] mx-auto w-full flex justify-center mb-6">
+        <h1 className="text-2xl md:text-4xl lg:text-[42px] xl:text-[46px] font-black text-slate-100 tracking-widest uppercase whitespace-nowrap">
+          Counter-Strike 2 Event Manager
+        </h1>
+      </div>
+
+      <nav className={`max-w-[1400px] mx-auto flex items-center justify-between gap-4 mb-8 bg-slate-900/80 p-4 rounded-2xl shadow-xl border border-slate-800 overflow-x-auto ${SCROLLBAR}`}>
+        <div className="flex items-center gap-2 shrink-0">
           <button onClick={() => setView('ranking')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'ranking' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Globe size={16}/> 榜单</button>
           <button onClick={() => setView('organize')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'organize' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><PlusCircle size={16}/> 办赛</button>
           <button onClick={() => setView('history')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'history' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><ListOrdered size={16}/> 赛事库</button>
@@ -1077,7 +1078,7 @@ export default function App() {
           <button onClick={() => { setView('formal'); setScheduleDate(state.currentDate); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'formal' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><CheckSquare size={16}/> Formal</button>
           {activeTour && <button onClick={() => setView('tournament')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'tournament' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-yellow-500 hover:bg-slate-800'}`}><Sword size={16}/> 现场</button>}
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 shrink-0">
           <div className="font-mono text-xl font-black text-orange-500 tracking-widest">{state.currentDate}</div>
           <button onClick={handleAdvanceDay} className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 px-6 py-2 rounded-lg font-black transition-all shadow-lg hover:shadow-orange-500/30 flex items-center gap-2">下一天 <Clock size={16}/></button>
         </div>
@@ -1323,7 +1324,7 @@ export default function App() {
               <div className="flex justify-center gap-6 text-slate-400 text-xs mb-6 font-mono">
                 <span>INV: {activeTour.invDate}</span><span>START: {activeTour.startDate}</span>
                 <span className="text-green-500">PRIZE: ${(activeTour.prize || 0).toLocaleString()}</span>
-                <span className="text-orange-400">STATUS: {activeTour.status}</span>
+                <span className="text-orange-400 uppercase tracking-widest">STATUS: {activeTour.status}</span>
               </div>
               {activeTour.champion && (
                 <div className="bg-green-600/10 border border-green-500/30 p-4 rounded-xl inline-block min-w-[200px] shadow-lg">
