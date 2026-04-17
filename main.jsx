@@ -60,16 +60,20 @@ const PLACEMENT_WEIGHTS = {
 };
 
 const ESPORTS_CITIES = [
-  "Shanghai", "Beijing", "Chengdu", "Guangzhou", "Shenzhen", "Wuhan", "Hangzhou", "Nanjing", "Xi'an", "Chongqing",
-  "Hong Kong", "Taipei", "Seoul", "Busan", "Tokyo", "Yokohama", "Osaka", "Kyoto", "Nagoya", "Sapporo",
-  "Singapore", "Bangkok", "Kuala Lumpur", "Jakarta", "Manila", "Ho Chi Minh City", "Hanoi", "Mumbai", "Delhi", "Bengaluru",
-  "Sydney", "Melbourne", "Perth", "Brisbane", "Auckland", "Wellington", "Los Angeles", "San Francisco", "Seattle", "Austin",
-  "Dallas", "Houston", "Chicago", "Atlanta", "New York", "Boston", "Philadelphia", "Washington", "Miami", "Phoenix",
-  "Las Vegas", "Denver", "San Diego", "Orlando", "Toronto", "Vancouver", "Montreal", "Ottawa", "Calgary", "Edmonton",
-  "Mexico City", "Guadalajara", "Monterrey", "Sao Paulo", "Rio de Janeiro", "Brasilia", "Curitiba", "Porto Alegre", "Buenos Aires", "Santiago",
-  "Lima", "Bogota", "Quito", "Medellin", "London", "Manchester", "Birmingham", "Paris", "Lyon", "Marseille",
-  "Berlin", "Hamburg", "Munich", "Cologne", "Frankfurt", "Amsterdam", "Rotterdam", "Brussels", "Madrid", "Barcelona",
-  "Valencia", "Lisbon", "Porto", "Rome", "Milan", "Naples", "Stockholm", "Copenhagen", "Helsinki", "Warsaw"
+  "Aarhus", "Abu Dhabi", "Adelaide", "Almaty", "Amsterdam", "Antwerp", "Astana", "Astata", "Atlanta", "Auckland",
+  "Austin", "Bangkok", "Barcelona", "Beijing", "Belgrade", "Berlin", "Birmingham", "Bogota", "Boston", "Brasilia",
+  "Bratislava", "Brisbane", "Brussels", "Bucharest", "Budapest", "Busan", "Calgary", "Chengdu", "Chicago", "Cluj-Napoca",
+  "Cologne", "Copenhagen", "Curitiba", "Dallas", "Delhi", "Denver", "Doha", "Dubai", "Dusseldorf", "Edmonton",
+  "Frankfurt", "Gdansk", "Gothenburg", "Guadalajara", "Guangzhou", "Hamburg", "Hangzhou", "Hanoi", "Helsinki", "Ho Chi Minh City",
+  "Hong Kong", "Houston", "Istanbul", "Jakarta", "Jeddah", "Johannesburg", "Katowice", "Kiev", "Krakow", "Kuala Lumpur",
+  "Kyiv", "Kyoto", "Las Vegas", "Leipzig", "Lima", "Lisbon", "London", "Los Angeles", "Lyon", "Macau",
+  "Madrid", "Malmo", "Manchester", "Manila", "Marseille", "Medellin", "Melbourne", "Mexico City", "Miami", "Milan",
+  "Monterrey", "Montreal", "Moscow", "Mumbai", "Munich", "Nagoya", "Nanjing", "Naples", "New York", "Odense",
+  "Orlando", "Osaka", "Oslo", "Ottawa", "Paris", "Perth", "Philadelphia", "Phoenix", "Porto", "Porto Alegre",
+  "Prague", "Quito", "Reykjavik", "Rio", "Rome", "Rotterdam", "Santiago", "Sao Paulo", "Sapporo", "Seattle",
+  "Seoul", "Shanghai", "Shenzhen", "Singapore", "Sofia", "Stockholm", "Sydney", "Taipei", "Tallinn", "Tashkent",
+  "Tbilisi", "Tel Aviv", "Tokyo", "Toronto", "Valencia", "Valletta", "Vancouver", "Vienna", "Vilnius", "Warsaw",
+  "Washington", "Wellington", "Wroclaw", "Wuhan", "Xi'an", "Yokohama", "Zagreb"
 ];
 
 const SCROLLBAR = "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-[#0f172a] [&::-webkit-scrollbar-track]:rounded [&::-webkit-scrollbar-thumb]:bg-[#1e3a8a] [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb:hover]:bg-[#2563eb]";
@@ -1353,7 +1357,7 @@ export default function App() {
               </div>
               {['MAJOR', 'IEM', 'BLAST'].includes(config.format) && (
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">4. Host City (Search & Select)</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">4. 举办城市</label>
                   <input
                     type="text"
                     value={citySearch}
@@ -1382,7 +1386,7 @@ export default function App() {
                     )}
                   </div>
                   <div className="mt-2 text-xs text-slate-500">
-                    Selected: <span className="text-slate-300 font-semibold">{config.nameInput || 'None'}</span>
+                    已选择: <span className="text-slate-300 font-semibold">{config.nameInput || '无'}</span>
                   </div>
                 </div>
               )}
