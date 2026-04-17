@@ -59,6 +59,19 @@ const PLACEMENT_WEIGHTS = {
   "9th-16th": 70, "17th-24th": 30
 };
 
+const ESPORTS_CITIES = [
+  "Shanghai", "Beijing", "Chengdu", "Guangzhou", "Shenzhen", "Wuhan", "Hangzhou", "Nanjing", "Xi'an", "Chongqing",
+  "Hong Kong", "Taipei", "Seoul", "Busan", "Tokyo", "Yokohama", "Osaka", "Kyoto", "Nagoya", "Sapporo",
+  "Singapore", "Bangkok", "Kuala Lumpur", "Jakarta", "Manila", "Ho Chi Minh City", "Hanoi", "Mumbai", "Delhi", "Bengaluru",
+  "Sydney", "Melbourne", "Perth", "Brisbane", "Auckland", "Wellington", "Los Angeles", "San Francisco", "Seattle", "Austin",
+  "Dallas", "Houston", "Chicago", "Atlanta", "New York", "Boston", "Philadelphia", "Washington", "Miami", "Phoenix",
+  "Las Vegas", "Denver", "San Diego", "Orlando", "Toronto", "Vancouver", "Montreal", "Ottawa", "Calgary", "Edmonton",
+  "Mexico City", "Guadalajara", "Monterrey", "Sao Paulo", "Rio de Janeiro", "Brasilia", "Curitiba", "Porto Alegre", "Buenos Aires", "Santiago",
+  "Lima", "Bogota", "Quito", "Medellin", "London", "Manchester", "Birmingham", "Paris", "Lyon", "Marseille",
+  "Berlin", "Hamburg", "Munich", "Cologne", "Frankfurt", "Amsterdam", "Rotterdam", "Brussels", "Madrid", "Barcelona",
+  "Valencia", "Lisbon", "Porto", "Rome", "Milan", "Naples", "Stockholm", "Copenhagen", "Helsinki", "Warsaw"
+];
+
 const SCROLLBAR = "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-[#0f172a] [&::-webkit-scrollbar-track]:rounded [&::-webkit-scrollbar-thumb]:bg-[#1e3a8a] [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb:hover]:bg-[#2563eb]";
 
 const calculatePrize = (formatId, tierId) => Math.round((FORMATS[formatId]?.basePrize || 0) * (TOURNAMENT_TIERS[tierId]?.multiplier || 0));
@@ -908,11 +921,25 @@ export default function App() {
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   const [scheduleDate, setScheduleDate] = useState('2026-01-01');
   const [historyTierFilter, setHistoryTierFilter] = useState('ALL');
+  const [citySearch, setCitySearch] = useState('');
+
+  const cityLookup = useMemo(() => {
+    const map = {};
+    ESPORTS_CITIES.forEach(c => { map[c.toLowerCase()] = c; });
+    return map;
+  }, []);
+
+  const citySearchResult = useMemo(() => {
+    const q = citySearch.trim().toLowerCase();
+    if (!q) return ESPORTS_CITIES;
+    return ESPORTS_CITIES.filter(c => c.toLowerCase().includes(q));
+  }, [citySearch]);
 
   const handleFormatChange = (newFormatId) => {
     const format = FORMATS[newFormatId];
     const newTier = format.allowedTiers.includes(config.tier) ? config.tier : format.allowedTiers[0];
     setConfig({ ...config, format: newFormatId, tier: newTier, nameInput: '' });
+    setCitySearch('');
     setErrorMsg('');
   };
 
@@ -997,7 +1024,8 @@ export default function App() {
   const handleCreateTournament = () => {
     setErrorMsg('');
     let eName = config.nameInput.trim();
-    if(['MAJOR','IEM','BLAST'].includes(config.format) && !eName) return setErrorMsg("请输入赛事名称标识！");
+    if(['MAJOR','IEM','BLAST'].includes(config.format) && !eName) return setErrorMsg("Please select a city from the preset list.");
+    if(['MAJOR','IEM','BLAST'].includes(config.format) && !ESPORTS_CITIES.includes(eName)) return setErrorMsg("City must come from the preset list.");
     if(config.invDate <= state.currentDate) return setErrorMsg("邀请日期必须在当前日期之后！");
     if(state.tournaments.some(t => t.invDate === config.invDate)) return setErrorMsg("不能在同一天设置两个赛事的邀请日！");
     if(config.format === 'EWC' && state.tournaments.some(t => t.formatId === 'EWC' && t.invDate.startsWith(config.invDate.substring(0,4)))) return setErrorMsg("EWC 每年只能举办一次！");
@@ -1091,8 +1119,8 @@ export default function App() {
         </h1>
       </div>
 
-      <nav className={`max-w-[1400px] mx-auto flex items-center justify-between gap-4 mb-8 bg-slate-900/80 p-4 rounded-2xl shadow-xl border border-slate-800 overflow-x-auto ${SCROLLBAR}`}>
-        <div className="flex items-center gap-2 shrink-0">
+      <nav className={`max-w-[1400px] mx-auto flex flex-wrap items-center justify-between gap-4 mb-8 bg-slate-900/80 p-4 rounded-2xl shadow-xl border border-slate-800`}>
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
           <button onClick={() => setView('ranking')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'ranking' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Globe size={16}/> 榜单</button>
           <button onClick={() => setView('organize')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'organize' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><PlusCircle size={16}/> 办赛</button>
           <button onClick={() => setView('history')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'history' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><ListOrdered size={16}/> 赛事库</button>
@@ -1100,7 +1128,7 @@ export default function App() {
           <button onClick={() => { setView('formal'); setScheduleDate(state.currentDate); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'formal' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><CheckSquare size={16}/> Formal</button>
           {activeTour && <button onClick={() => setView('tournament')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'tournament' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-yellow-500 hover:bg-slate-800'}`}><Sword size={16}/> 现场</button>}
         </div>
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex flex-wrap items-center gap-4 min-w-0">
           <div className="font-mono text-xl font-black text-orange-500 tracking-widest">{state.currentDate}</div>
           <button onClick={handleAdvanceDay} className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 px-6 py-2 rounded-lg font-black transition-all shadow-lg hover:shadow-orange-500/30 flex items-center gap-2">下一天 <Clock size={16}/></button>
         </div>
@@ -1325,8 +1353,37 @@ export default function App() {
               </div>
               {['MAJOR', 'IEM', 'BLAST'].includes(config.format) && (
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">4. 赛事标识 (不含年份)</label>
-                  <input type="text" value={config.nameInput} onChange={e => setConfig({...config, nameInput: e.target.value})} placeholder="例如: Copenhagen" className="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-white font-bold outline-none"/>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">4. Host City (Search & Select)</label>
+                  <input
+                    type="text"
+                    value={citySearch}
+                    onChange={e => {
+                      const value = e.target.value;
+                      const exact = cityLookup[value.trim().toLowerCase()] || '';
+                      setCitySearch(value);
+                      setConfig({ ...config, nameInput: exact });
+                    }}
+                    placeholder="Search city, e.g. Copenhagen"
+                    className="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-white font-bold outline-none"
+                  />
+                  <div className="mt-2 max-h-40 overflow-y-auto bg-slate-950 border border-slate-800 rounded-xl p-2 space-y-1">
+                    {citySearchResult.map(city => (
+                      <button
+                        key={city}
+                        type="button"
+                        onClick={() => { setCitySearch(city); setConfig({ ...config, nameInput: city }); }}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${config.nameInput === city ? 'bg-blue-600 text-white' : 'bg-slate-900 text-slate-300 hover:bg-slate-800'}`}
+                      >
+                        {city}
+                      </button>
+                    ))}
+                    {citySearchResult.length === 0 && (
+                      <div className="px-3 py-2 text-sm text-slate-500">No city found in preset list.</div>
+                    )}
+                  </div>
+                  <div className="mt-2 text-xs text-slate-500">
+                    Selected: <span className="text-slate-300 font-semibold">{config.nameInput || 'None'}</span>
+                  </div>
                 </div>
               )}
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center mt-4">
@@ -1362,7 +1419,7 @@ export default function App() {
             )}
 
             {activeTour.status !== 'PENDING' && (
-              <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+              <div className="flex flex-wrap gap-2 pb-2">
                 <button onClick={() => setActiveStageIdx('standings')} className={`px-6 py-2 rounded-xl font-bold whitespace-nowrap text-sm ${activeStageIdx === 'standings' ? 'bg-yellow-600 text-slate-900 shadow-md' : 'bg-slate-900 border border-slate-800 text-yellow-500 hover:bg-slate-800'}`}>Standings</button>
                 <button onClick={() => setActiveStageIdx('participants')} className={`px-6 py-2 rounded-xl font-bold whitespace-nowrap text-sm ${activeStageIdx === 'participants' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-900 border border-slate-800 text-blue-400 hover:bg-slate-800'}`}>Participants</button>
                 {activeTour.stages.map((stage, idx) => (
