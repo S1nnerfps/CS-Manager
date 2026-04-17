@@ -662,7 +662,7 @@ const RoundHistoryBar = ({ history, tA, tB }) => {
        {halfData.map((winner, i) => (
          <div key={i} className="w-3.5 flex justify-center items-center">
             {winner === target ? (
-              target === 'A' ? <span className="text-[#38bdf8] text-xs">鈽?/span> : <span className="text-[#fbbf24] text-xs">鈽?/span>
+              target === 'A' ? <span className="text-[#38bdf8] text-xs">*</span> : <span className="text-[#fbbf24] text-xs">*</span>
             ) : <span className="w-3.5"/>}
          </div>
        ))}
@@ -745,7 +745,7 @@ const UnifiedMatchNode = ({ m }) => {
        <div className="bg-[#0b101a] border-t border-[#1e293b] flex flex-col">
           <button onClick={() => setOpen(!open)} className="w-full py-1.5 flex justify-center items-center gap-1 text-[#475569] hover:text-slate-300 transition-colors">
              {open ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
-             <span className="text-[9px]">灞曞紑璇︽儏</span>
+            <span className="text-[9px]">展开详情</span>
           </button>
           {open && m.details && m.details.length > 0 && (
              <div className="p-2 pt-0 space-y-2 mt-1 border-t border-[#1e293b]/50">
@@ -937,7 +937,7 @@ const TournamentStandingsTable = ({ standings, onTeamClick }) => (
             <th className="px-6 py-4 text-right">Prize Earned</th>
             <th className="px-6 py-4">Initial VRS</th>
             <th className="px-6 py-4">Final VRS</th>
-            <th className="px-6 py-4 text-right">螖 VRS</th>
+            <th className="px-6 py-4 text-right">Δ VRS</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-800/50">
@@ -999,7 +999,7 @@ const TournamentPredictTable = ({ tour, state, getRegionBadgeClass }) => {
     <div className="bg-slate-900/80 rounded-2xl border border-slate-800 overflow-hidden">
       <div className="p-6 border-b border-slate-800 flex items-center gap-2">
         <Clock className="text-blue-500" />
-        <h2 className="text-xl font-bold text-slate-100">VRS 閭€璇峰悕棰濋娴?(VRS Invitation Prediction)</h2>
+        <h2 className="text-xl font-bold text-slate-100">VRS 邀请预测 (VRS Invitation Prediction)</h2>
       </div>
       {tour.formatId === 'MAJOR' ? (
         <div className="p-4 grid grid-cols-1 xl:grid-cols-3 gap-4">
@@ -1010,7 +1010,7 @@ const TournamentPredictTable = ({ tour, state, getRegionBadgeClass }) => {
                 <span className="text-xs text-slate-500">S3 {majorSlots.stage3[group.region]} / S2 {majorSlots.stage2[group.region]} / S1 {majorSlots.stage1[group.region]}</span>
               </div>
               <div className={`max-h-80 overflow-y-auto ${SCROLLBAR}`}>
-                {[{ key: 'stage3', label: '鐩撮個 Stage 3' }, { key: 'stage2', label: '鐩撮個 Stage 2' }, { key: 'stage1', label: '杩涘叆 Stage 1' }].map(sec => (
+                {[{ key: 'stage3', label: '\u76f4\u9080 Stage 3' }, { key: 'stage2', label: '\u76f4\u9080 Stage 2' }, { key: 'stage1', label: '\u8fdb\u5165 Stage 1' }].map(sec => (
                   <div key={sec.key} className="border-b last:border-b-0 border-slate-800 p-3">
                     <div className="text-xs font-bold text-slate-400 mb-2">{sec.label}</div>
                     {group[sec.key].length === 0 ? <div className="text-xs text-slate-600">No slot</div> : group[sec.key].map(t => (
@@ -1184,10 +1184,10 @@ export default function App() {
     let eName = config.nameInput.trim();
     if(['MAJOR','IEM','BLAST'].includes(config.format) && !eName) return setErrorMsg("Please select a city from the preset list.");
     if(['MAJOR','IEM','BLAST'].includes(config.format) && !ESPORTS_CITIES.includes(eName)) return setErrorMsg("City must come from the preset list.");
-        if(config.invDate <= state.currentDate) return setErrorMsg("邀请日期必须在当前日期之后！");
-        if(state.tournaments.some(t => t.invDate === config.invDate)) return setErrorMsg("不能在同一天设置两个赛事的邀请日！");
-        if(config.format === 'MAJOR' && state.tournaments.filter(t => t.formatId === 'MAJOR' && t.invDate.startsWith(config.invDate.substring(0,4))).length >= 2) return setErrorMsg("Major 每年最多举办两次！");
-        if(config.format === 'EWC' && state.tournaments.some(t => t.formatId === 'EWC' && t.invDate.startsWith(config.invDate.substring(0,4)))) return setErrorMsg("EWC 每年只能举办一次！");
+    if(config.invDate <= state.currentDate) return setErrorMsg("邀请日期必须在当前日期之后！");
+    if(state.tournaments.some(t => t.invDate === config.invDate)) return setErrorMsg("不能在同一天设置两个赛事的邀请日！");
+    if(config.format === 'MAJOR' && state.tournaments.filter(t => t.formatId === 'MAJOR' && t.invDate.startsWith(config.invDate.substring(0,4))).length >= 2) return setErrorMsg("Major 每年最多举办两次！");
+    if(config.format === 'EWC' && state.tournaments.some(t => t.formatId === 'EWC' && t.invDate.startsWith(config.invDate.substring(0,4)))) return setErrorMsg("EWC 每年只能举办一次！");
 
     setState(prev => {
       const year = config.invDate.substring(0,4);
@@ -1308,7 +1308,7 @@ export default function App() {
         {view === 'ranking' && (
           <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-slate-800 bg-slate-900/80 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-2"><BarChart3 className="text-blue-500" /><h2 className="text-xl font-bold text-slate-100">娑撴牜鏅幋姗€妲?VRS 閹烘帒鎮?(Top 100)</h2></div>
+              <div className="flex items-center gap-2"><BarChart3 className="text-blue-500" /><h2 className="text-xl font-bold text-slate-100">全球 VRS 排行榜 (Top 100)</h2></div>
               <div className="flex flex-col sm:flex-row items-center gap-2">
                  <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-1">
                   {['Global', 'EU', 'AM', 'AS'].map(r => (
@@ -1318,15 +1318,15 @@ export default function App() {
                   ))}
                  </div>
                  <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-1">
-                   <button onClick={() => setSortMode('VRS')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'VRS' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'}`}>閹?VRS</button>
-                   <button onClick={() => setSortMode('PRIZE')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'PRIZE' ? 'bg-green-600 text-white' : 'text-slate-400 hover:text-white'}`}>閹稿绁婚柌?/button>
+                  <button onClick={() => setSortMode('VRS')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'VRS' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'}`}>按 VRS</button>
+                   <button onClick={() => setSortMode('PRIZE')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'PRIZE' ? 'bg-green-600 text-white' : 'text-slate-400 hover:text-white'}`}>按赏金</button>
                  </div>
               </div>
             </div>
             <div className={`overflow-x-auto max-h-[75vh] ${SCROLLBAR}`}>
               <table className="w-full text-left">
                 <thead className="bg-slate-900 text-slate-500 text-xs uppercase sticky top-0 z-10 shadow-md">
-                  <tr><th className="px-6 py-4">Rank</th><th className="px-6 py-4 text-center">Region</th><th className="px-6 py-4">Team</th><th className="px-6 py-4"><div className="flex items-center gap-1">VRS Points {sortMode === 'VRS' && <ArrowDownUp size={12}/>}</div></th><th className="px-6 py-4 text-center">鎺ュ彈閭€璇锋垚鍔熺巼</th><th className="px-6 py-4 text-right"><div className="flex items-center justify-end gap-1">Career Earnings {sortMode === 'PRIZE' && <ArrowDownUp size={12}/>}</div></th></tr>
+                  <tr><th className="px-6 py-4">Rank</th><th className="px-6 py-4 text-center">Region</th><th className="px-6 py-4">Team</th><th className="px-6 py-4"><div className="flex items-center gap-1">VRS Points {sortMode === 'VRS' && <ArrowDownUp size={12}/>}</div></th><th className="px-6 py-4 text-center">接受邀请成功率</th><th className="px-6 py-4 text-right"><div className="flex items-center justify-end gap-1">Career Earnings {sortMode === 'PRIZE' && <ArrowDownUp size={12}/>}</div></th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
                   {displayTeams.map((team) => (
@@ -1363,8 +1363,8 @@ export default function App() {
             </div>
             
             <div className="bg-slate-900/80 border border-slate-800 p-8 rounded-3xl shadow-xl">
-               <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-100"><Trophy className="text-yellow-500"/> 鍘嗗彶鑽ｈ獕璁板綍 (Historical Honors)</h3>
-               {(!selectedTeam.honors || selectedTeam.honors.length === 0) ? <div className="text-slate-500 text-center py-12 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">鏆傛棤鍗撹秺鑽ｈ獕</div> :
+               <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-100"><Trophy className="text-yellow-500"/> 历史荣誉记录 (Historical Honors)</h3>
+               {(!selectedTeam.honors || selectedTeam.honors.length === 0) ? <div className="text-slate-500 text-center py-12 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">暂无历史荣誉</div> :
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    {selectedTeam.honors.map((h, i) => {
                      const c = getHonorColor(h.tier, h.placement);
@@ -1381,12 +1381,12 @@ export default function App() {
             </div>
 
             <div className="bg-slate-900/80 border border-slate-800 p-8 rounded-3xl shadow-xl mt-6">
-                <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-100"><ListOrdered className="text-blue-500"/> 姣旇禌璁板綍 (Tournament History)</h3>
-                {teamTournaments.length === 0 ? <div className="text-slate-500 text-center py-12 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">鏆傛棤姣旇禌璁板綍</div> :
+                <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-100"><ListOrdered className="text-blue-500"/> 赛事记录 (Tournament History)</h3>
+                {teamTournaments.length === 0 ? <div className="text-slate-500 text-center py-12 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">暂无赛事记录</div> :
                 <div className={`overflow-x-auto ${SCROLLBAR}`}>
                     <table className="w-full text-left text-sm">
                     <thead className="bg-slate-950 text-slate-400 uppercase text-xs">
-                        <tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Tournament</th><th className="px-4 py-3">Placement</th><th className="px-4 py-3 text-right">Prize</th><th className="px-4 py-3 text-right">螖 VRS</th></tr>
+                        <tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Tournament</th><th className="px-4 py-3">Placement</th><th className="px-4 py-3 text-right">Prize</th><th className="px-4 py-3 text-right">Δ VRS</th></tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/50">
                         {teamTournaments.map(tt => {
@@ -1415,7 +1415,7 @@ export default function App() {
         {view === 'calendar' && (
           <div className="max-w-4xl mx-auto bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
             <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
-              <h2 className="text-2xl font-black flex items-center gap-2 text-slate-100"><Calendar className="text-blue-500"/> 璧涗簨鏃ュ巻</h2>
+              <h2 className="text-2xl font-black flex items-center gap-2 text-slate-100"><Calendar className="text-blue-500"/> 赛事日历</h2>
               <div className="flex items-center gap-2">
                  <button onClick={() => changeScheduleDate(-1)} className="bg-slate-800 p-2 rounded hover:bg-slate-700 transition"><ArrowLeft size={16}/></button>
                  <input type="date" value={scheduleDate} onChange={e=>setScheduleDate(e.target.value)} className="bg-slate-950 border border-slate-700 text-white px-4 py-2 rounded-lg outline-none font-mono"/>
@@ -1424,10 +1424,10 @@ export default function App() {
             </div>
             <div className="mb-6 flex items-center gap-2 text-sm text-slate-300">
               <input id="track-today" type="checkbox" checked={trackCalendarToday} onChange={e => setTrackCalendarToday(e.target.checked)} className="accent-blue-500" />
-              <label htmlFor="track-today" className="cursor-pointer">璺熻釜褰撳ぉ锛堝嬀閫夊悗鍦ㄦ湰鐣岄潰鐐瑰嚮鈥滀笅涓€澶┾€濅細鑷姩璺宠浆鍒板綋澶╋級</label>
+              <label htmlFor="track-today" className="cursor-pointer">跟踪当天（勾选后在本界面点击“下一天”会自动跳转到当天）</label>
             </div>
             <div className="space-y-4">
-              {scheduledMatchesForDay.length === 0 ? <div className="text-center py-12 text-slate-500 bg-slate-950/50 rounded-xl border border-dashed border-slate-800">璇ユ棩鏃犺禌浜?/div> :
+              {scheduledMatchesForDay.length === 0 ? <div className="text-center py-12 text-slate-500 bg-slate-950/50 rounded-xl border border-dashed border-slate-800">当天暂无已排期比赛</div> :
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {scheduledMatchesForDay.map((m, idx) => (
                     <div key={idx} className={`relative ${m.status === 'PLAYED' ? 'opacity-80' : ''}`}>
@@ -1444,14 +1444,14 @@ export default function App() {
         {view === 'history' && (
           <div className="space-y-12">
             <div className="flex items-center gap-4 bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
-               <span className="font-bold text-sm text-slate-400">绾у埆绛涢€夛細</span>
+               <span className="font-bold text-sm text-slate-400">赛事级别筛选</span>
                {['ALL', ...TIER_ORDER].map(tf => (
-                 <button key={tf} onClick={()=>setHistoryTierFilter(tf)} className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${historyTierFilter===tf ? 'bg-blue-600 text-white':'bg-slate-800 text-slate-500 hover:text-slate-300'}`}>{TOURNAMENT_TIERS[tf]?.name || '鍏ㄩ儴'}</button>
+                <button key={tf} onClick={()=>setHistoryTierFilter(tf)} className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${historyTierFilter===tf ? 'bg-blue-600 text-white':'bg-slate-800 text-slate-500 hover:text-slate-300'}`}>{TOURNAMENT_TIERS[tf]?.name || 'ALL'}</button>
                ))}
             </div>
 
             {Object.keys(groupedHistory).length === 0 ? (
-              <div className="p-12 text-center text-slate-500 bg-slate-900/50 rounded-2xl border border-slate-800 shadow-inner">鏆傛棤璧涗簨璁板綍銆?/div>
+              <div className="p-12 text-center text-slate-500 bg-slate-900/50 rounded-2xl border border-slate-800 shadow-inner">暂无赛事历史记录</div>
             ) : (
               Object.entries(groupedHistory).map(([formatId, formatGroup]) => {
                 let sortedTiers = TIER_ORDER.filter(tId => formatGroup[tId] && (historyTierFilter === 'ALL' || historyTierFilter === tId));
@@ -1493,10 +1493,10 @@ export default function App() {
 
         {view === 'organize' && (
           <div className="max-w-2xl mx-auto bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
-            <h2 className="text-3xl font-black mb-8 flex items-center gap-3 text-slate-100"><span className="bg-blue-500/20 text-blue-500 p-2 rounded-xl"><Calendar /></span> 鍒涘缓涓栫晫绾ц禌浜?/h2>
+            <h2 className="text-3xl font-black mb-8 flex items-center gap-3 text-slate-100"><span className="bg-blue-500/20 text-blue-500 p-2 rounded-xl"><Calendar /></span> 创建赛事</h2>
             <div className="space-y-6">
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">1. 鍩虹璧涘埗</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">1. 基础赛制</label>
                 <div className="grid grid-cols-2 gap-2">
                   {Object.values(FORMATS).map(f => (
                     <div key={f.id} onClick={() => handleFormatChange(f.id)} className={`p-3 rounded-xl border cursor-pointer font-bold transition-all text-center ${config.format === f.id ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-500'}`}>{f.name}</div>
@@ -1504,7 +1504,7 @@ export default function App() {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">2. 璧涗簨妗ｆ (Tiers)</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">2. 赛事档次 (Tiers)</label>
                 <div className="grid grid-cols-3 gap-2">
                   {FORMATS[config.format].allowedTiers.map(tId => (
                     <div key={tId} onClick={() => setConfig({...config, tier: tId})} className={`p-3 rounded-xl border cursor-pointer transition-all text-center ${config.tier === tId ? 'border-orange-500 bg-orange-500/10 text-orange-400' : 'border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-500'}`}>
@@ -1514,7 +1514,7 @@ export default function App() {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">3. 閭€璇锋埅姝㈡棩鏈?/label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">3. 邀请截止日期</label>
                 <input type="date" value={config.invDate} min={addDays(state.currentDate, 1)} onChange={e => setConfig({...config, invDate: e.target.value})} className="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-white font-mono outline-none"/>
               </div>
               {['MAJOR', 'IEM', 'BLAST'].includes(config.format) && (
@@ -1548,16 +1548,16 @@ export default function App() {
                     )}
                   </div>
                   <div className="mt-2 text-xs text-slate-500">
-                    已选择: <span className="text-slate-300 font-semibold">{config.nameInput || '无'}</span>
+                    已选择: <span className="text-slate-300 font-semibold">{config.nameInput || '未选择'}</span>
                   </div>
                 </div>
               )}
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center mt-4">
-                 <div><div className="text-[10px] text-slate-500 uppercase font-bold mb-1">鎬诲閲戞睜</div><div className="text-2xl font-mono font-black text-green-500">${calculatePrize(config.format, config.tier).toLocaleString()}</div></div>
+                 <div><div className="text-[10px] text-slate-500 uppercase font-bold mb-1">总奖金额</div><div className="text-2xl font-mono font-black text-green-500">${calculatePrize(config.format, config.tier).toLocaleString()}</div></div>
                  <DollarSign size={32} className="text-slate-800" />
               </div>
               {errorMsg && <div className="bg-red-500/10 border border-red-500/50 text-red-500 px-4 py-2 rounded-lg text-sm font-bold">{errorMsg}</div>}
-              <button onClick={handleCreateTournament} className="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-black text-lg transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] mt-4">绔嬮」璧涗簨锛岄攣瀹氭帓鏈?/button>
+              <button onClick={handleCreateTournament} className="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-black text-lg transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] mt-4">创建赛事并加入赛事日历</button>
             </div>
           </div>
         )}
@@ -1597,7 +1597,7 @@ export default function App() {
             {activeStageIdx === 'standings' ? (
               activeTour.status === 'COMPLETED' ? (
                 <TournamentStandingsTable standings={activeTour.standings} onTeamClick={(t) => {setSelectedTeamId(t.id); setView('team');}} />
-              ) : activeTour.stages?.[0] ? <StageViewer stage={activeTour.stages[0]} /> : <div className="text-center p-12 text-slate-500">璧涗簨闃舵灏氭湭鐢熸垚銆?/div>
+              ) : activeTour.stages?.[0] ? <StageViewer stage={activeTour.stages[0]} /> : <div className="text-center p-12 text-slate-500">暂无可展示的赛程数据</div>
             ) : activeStageIdx === 'participants' ? (
               <TournamentParticipantsTable participants={activeTour.participants} onTeamClick={(t) => {setSelectedTeamId(t.id); setView('team');}} getRegionBadgeClass={getRegionBadgeClass} />
             ) : activeStageIdx !== 'standings' && activeStageIdx !== 'participants' && activeTour.stages[activeStageIdx] ? (
