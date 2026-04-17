@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Trophy, Users, Sword, BarChart3, PlusCircle, Calendar, DollarSign, CheckCircle2, ChevronDown, ChevronUp, Check, Shield, History, ArrowDownUp, Clock, ListOrdered, ArrowLeft, ArrowRight, Globe } from 'lucide-react';
 
 const MAP_POOL = [
@@ -49,6 +49,8 @@ const FORMATS = {
   BLAST: { id: 'BLAST', name: 'BLAST', teams: 8, basePrize: 1000000, allowedTiers: ['HIGHEST', 'TIER_S', 'TIER_1'] },
   EPL: { id: 'EPL', name: 'EPL', teams: 24, basePrize: 800000, allowedTiers: ['HIGHEST', 'TIER_S', 'TIER_1', 'TIER_2', 'TIER_3', 'TIER_OPEN'] },
 };
+
+const CITY_REQUIRED_FORMATS = new Set(['MAJOR', 'IEM', 'BLAST']);
 
 const PLACEMENT_WEIGHTS = {
   "1st": 5000, "2nd": 2000, "3rd": 1000, "4th": 800, "3rd-4th": 900,
@@ -113,6 +115,39 @@ const addDays = (ymd, days) => {
   return d.toISOString().split('T')[0];
 };
 
+const getTournamentFinalDate = (tour) => {
+  const allDates = (tour.stages || [])
+    .flatMap(st => (st.nodes || []).map(n => n.date))
+    .filter(Boolean);
+  if (allDates.length === 0) return tour.startDate || tour.invDate || '0000-00-00';
+  return allDates.sort((a, b) => String(a).localeCompare(String(b))).at(-1);
+};
+
+const inferTournamentCity = (tour) => {
+  if (tour.city) return String(tour.city);
+  const n = String(tour.name || '');
+  if (tour.formatId === 'MAJOR' && n.includes(' Major ')) return n.split(' Major ')[0].trim();
+  if (tour.formatId === 'IEM' && n.startsWith('Intel Extreme Masters ')) {
+    const rest = n.replace('Intel Extreme Masters ', '');
+    const parts = rest.split(' ');
+    if (parts.length >= 2) return parts.slice(0, -1).join(' ').trim();
+  }
+  if (tour.formatId === 'BLAST') {
+    const m = n.match(/BLAST (?:Grand Final|Rivals|Open) (.+) \d{4}$/);
+    if (m && m[1]) return m[1].trim();
+  }
+  return '';
+};
+
+const shuffleArray = (arr) => {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+};
+
 const pickMaps = (count) => {
   let available = [...MAP_POOL], picked = [];
   for(let i=0; i<count; i++) {
@@ -166,7 +201,7 @@ const playMatchEngine = (tA, tB, state, isBO5 = false) => {
   state.vrsMap[tA.id] = Math.max(600, Math.min(2200, vrsA + chgA));
   state.vrsMap[tB.id] = Math.max(600, Math.min(2200, vrsB + chgB));
 
-  return { tA, tB, scoreA: mapsA, scoreB: mapsB, winner, loser, details, change: Math.abs(chgA) };
+  return { tA, tB, scoreA: mapsA, scoreB: mapsB, winner, loser, details, chgA, chgB, change: Math.abs(chgA) };
 };
 
 const assignDatesNodes = (nodes, startDate, isPlayoff) => {
@@ -420,9 +455,18 @@ const doInvitationAndInit = (tour, state) => {
       Math.random() < ((state.staminaMap[t.id]||100)/100) ? accepted.push(t) : rejected.push(t);
     }
     if(accepted.length < tour.size) accepted.push(...rejected.slice(0, tour.size - accepted.length));
-    tour.participants = accepted
+    const ordered = accepted
       .sort((a,b)=>(state.vrsMap[b.id]||1000)-(state.vrsMap[a.id]||1000))
       .map((t,i)=>({ ...t, seed: i+1 }));
+    if (tour.formatId === 'EPL') {
+      tour.participants = ordered.map((t, i) => {
+        const stageLabel = i < 8 ? 'Stage 2 Direct' : 'Stage 1';
+        const stageSeed = i < 8 ? i + 1 : i - 7;
+        return { ...t, invitedStage: stageLabel, stageSeed };
+      });
+    } else {
+      tour.participants = ordered;
+    }
   }
 
   tour.initialVrs = {};
@@ -434,10 +478,11 @@ const doInvitationAndInit = (tour, state) => {
   else if (tour.formatId === 'EPL') firstPool = tour.participants.slice(8,24);
 
   if (stg0.type === 'SWISS') {
+    const swissPool = shuffleArray(firstPool);
     let g00 = stg0.rounds[0].groups[0].matchIds;
-    for(let i=0; i<firstPool.length-1; i+=2) {
+    for(let i=0; i<swissPool.length-1; i+=2) {
       let m = stg0.nodes.find(n=>n.id===g00[i/2]);
-      if(m) { m.tA={...firstPool[i]}; m.tB={...firstPool[i+1]}; }
+      if(m) { m.tA={...swissPool[i]}; m.tB={...swissPool[i+1]}; }
     }
     stg0.records = firstPool.map((t, idx) => ({ team: t, seed: t.seed || idx + 1, w: 0, l: 0 }));
   }
@@ -468,6 +513,7 @@ const doInvitationAndInit = (tour, state) => {
   }
 
   tour.status = 'WAITING';
+  tour.vrsDeltaMap = tour.vrsDeltaMap || {};
 };
 
 const finishTournament = (tour, state) => {
@@ -479,7 +525,8 @@ const finishTournament = (tour, state) => {
     placement: String(p.tag), team: p.team, 
     prize: Math.round(validPrize * ((PLACEMENT_WEIGHTS[p.tag] || 0) / totalW)),
     vrsBefore: tour.initialVrs?.[p.team.id] ?? p.vrsBefore ?? 1000, 
-    vrsAfter: state.vrsMap[p.team.id] || 1000
+    vrsAfter: state.vrsMap[p.team.id] || 1000,
+    deltaVrs: (tour.vrsDeltaMap && Number.isFinite(tour.vrsDeltaMap[p.team.id])) ? tour.vrsDeltaMap[p.team.id] : ((state.vrsMap[p.team.id] || 1000) - (tour.initialVrs?.[p.team.id] ?? p.vrsBefore ?? 1000))
   })).sort((a, b) => {
      const diff = (PLACEMENT_WEIGHTS[b.placement] || 0) - (PLACEMENT_WEIGHTS[a.placement] || 0);
      if (diff !== 0) return diff;
@@ -544,6 +591,9 @@ const processDayTick = (tour, state, dateStr) => {
   
   unplayedToday.forEach(m => {
     playMatchEngineInstance(m, state);
+    tour.vrsDeltaMap = tour.vrsDeltaMap || {};
+    tour.vrsDeltaMap[m.tA.id] = (tour.vrsDeltaMap[m.tA.id] || 0) + (m.chgA || 0);
+    tour.vrsDeltaMap[m.tB.id] = (tour.vrsDeltaMap[m.tB.id] || 0) + (m.chgB || 0);
     
     if (stg.type === 'SWISS') {
       let rA = stg.records.find(r=>r.team.id === m.tA.id);
@@ -568,7 +618,7 @@ const processDayTick = (tour, state, dateStr) => {
       stg.records.filter(r=>r.w<3 && r.l<3).forEach(r => { let k = `${r.w}-${r.l}`; if(!groups[k]) groups[k]=[]; groups[k].push(r); });
       let nextRnd = stg.rounds[stg.currentRound];
       Object.keys(groups).forEach(k => {
-        let p = groups[k].sort((a,b)=>a.seed-b.seed);
+        let p = shuffleArray(groups[k]);
         let tgtGrp = nextRnd.groups.find(g=>g.name===k);
         if (tgtGrp) {
           for(let i=0; i<p.length-1; i+=2) {
@@ -624,10 +674,11 @@ const processDayTick = (tour, state, dateStr) => {
       pool = pool.sort((a,b)=>(state.vrsMap[b.id]||1000)-(state.vrsMap[a.id]||1000)).map((t,i)=>({...t, seed: i+1}));
       
       if (nextStg.type === 'SWISS') {
+        const drawPool = shuffleArray(pool);
         let g00 = nextStg.rounds[0].groups[0].matchIds;
-        for(let i=0; i<pool.length-1; i+=2) { 
+        for(let i=0; i<drawPool.length-1; i+=2) {
           let m = nextStg.nodes.find(n=>n.id===g00[i/2]);
-          if(m) { m.tA={...pool[i]}; m.tB={...pool[i+1]}; }
+          if(m) { m.tA={...drawPool[i]}; m.tB={...drawPool[i+1]}; }
         }
         nextStg.records = pool.map(t => ({ team: t, seed: t.seed, w: 0, l: 0 }));
       }
@@ -886,9 +937,53 @@ const StageViewer = ({ stage }) => {
         {stage.rounds?.map((r, i) => (
           <div key={i} className="flex flex-col gap-4 min-w-[280px]">
             <h3 className="text-center font-bold text-slate-100 tracking-wider mb-2">{r.name}</h3>
-            {r.groups?.map((g, j) => (
+            {stage.type === 'SWISS' ? (
+              <div className="flex flex-col min-h-[760px] justify-between gap-4">
+                <div className="space-y-4">
+                  {r.groups?.filter(g => {
+                    const [w, lose] = g.name.split('-').map(Number);
+                    return Number.isFinite(w) && Number.isFinite(lose) && w > lose;
+                  }).map((g, j) => (
+                    <div key={`u-${j}`} className="flex flex-col gap-2">
+                      <div className="text-center text-[10px] text-blue-400 font-black mb-1 tracking-widest uppercase bg-blue-500/10 py-1 rounded">Bracket {g.name}</div>
+                      {g.matchIds.map((mId, k) => {
+                         let m = stage.nodes.find(n=>n.id===mId);
+                         return m ? <UnifiedMatchNode key={k} m={m} /> : null;
+                      })}
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-4">
+                  {r.groups?.filter(g => {
+                    const [w, lose] = g.name.split('-').map(Number);
+                    return Number.isFinite(w) && Number.isFinite(lose) && w === lose;
+                  }).map((g, j) => (
+                    <div key={`m-${j}`} className="flex flex-col gap-2">
+                      <div className="text-center text-[10px] text-blue-400 font-black mb-1 tracking-widest uppercase bg-blue-500/10 py-1 rounded">Bracket {g.name}</div>
+                      {g.matchIds.map((mId, k) => {
+                         let m = stage.nodes.find(n=>n.id===mId);
+                         return m ? <UnifiedMatchNode key={k} m={m} /> : null;
+                      })}
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-4">
+                  {r.groups?.filter(g => {
+                    const [w, lose] = g.name.split('-').map(Number);
+                    return Number.isFinite(w) && Number.isFinite(lose) && w < lose;
+                  }).map((g, j) => (
+                    <div key={`l-${j}`} className="flex flex-col gap-2">
+                      <div className="text-center text-[10px] text-blue-400 font-black mb-1 tracking-widest uppercase bg-blue-500/10 py-1 rounded">Bracket {g.name}</div>
+                      {g.matchIds.map((mId, k) => {
+                         let m = stage.nodes.find(n=>n.id===mId);
+                         return m ? <UnifiedMatchNode key={k} m={m} /> : null;
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : r.groups?.map((g, j) => (
               <div key={j} className="flex flex-col gap-2">
-                {stage.type === 'SWISS' && <div className="text-center text-[10px] text-blue-400 font-black mb-1 tracking-widest uppercase bg-blue-500/10 py-1 rounded">Bracket {g.name}</div>}
                 {g.matchIds.map((mId, k) => {
                    let m = stage.nodes.find(n=>n.id===mId);
                    return m ? <UnifiedMatchNode key={k} m={m} /> : null;
@@ -937,7 +1032,7 @@ const TournamentStandingsTable = ({ standings, onTeamClick }) => (
             <th className="px-6 py-4 text-right">Prize Earned</th>
             <th className="px-6 py-4">Initial VRS</th>
             <th className="px-6 py-4">Final VRS</th>
-            <th className="px-6 py-4 text-right">Δ VRS</th>
+            <th className="px-6 py-4 text-right">? VRS</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-800/50">
@@ -948,8 +1043,8 @@ const TournamentStandingsTable = ({ standings, onTeamClick }) => (
               <td className="px-6 py-3 text-right text-green-500 font-mono font-bold">${(s.prize || 0).toLocaleString()}</td>
               <td className="px-6 py-3 font-mono text-slate-500">{s.vrsBefore}</td>
               <td className="px-6 py-3 font-mono text-white">{s.vrsAfter}</td>
-              <td className={`px-6 py-3 font-mono font-bold text-right ${s.vrsAfter-s.vrsBefore >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {s.vrsAfter-s.vrsBefore >= 0 ? '+' : ''}{s.vrsAfter-s.vrsBefore}
+              <td className={`px-6 py-3 font-mono font-bold text-right ${(s.deltaVrs ?? (s.vrsAfter - s.vrsBefore)) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {(s.deltaVrs ?? (s.vrsAfter - s.vrsBefore)) >= 0 ? '+' : ''}{s.deltaVrs ?? (s.vrsAfter - s.vrsBefore)}
               </td>
             </tr>
           ))}
@@ -959,7 +1054,7 @@ const TournamentStandingsTable = ({ standings, onTeamClick }) => (
   </div>
 );
 
-const TournamentParticipantsTable = ({ participants, onTeamClick, getRegionBadgeClass }) => (
+const TournamentParticipantsTable = ({ participants, onTeamClick, getRegionBadgeClass, globalRankByTeamId }) => (
   <div className="bg-slate-900/80 rounded-2xl border border-slate-800 overflow-hidden">
     <div className="p-6 border-b border-slate-800 flex items-center gap-2">
       <Users className="text-blue-500" />
@@ -968,17 +1063,22 @@ const TournamentParticipantsTable = ({ participants, onTeamClick, getRegionBadge
     <div className={`overflow-x-auto max-h-[60vh] ${SCROLLBAR}`}>
       <table className="w-full text-left text-sm">
         <thead className="bg-slate-950 text-slate-400 uppercase text-xs sticky top-0 z-10">
-          <tr><th className="px-6 py-4">Seed (CSEMTV Rank)</th><th className="px-6 py-4">Team</th><th className="px-6 py-4 text-center">Region</th><th className="px-6 py-4">Entry</th></tr>
+          <tr><th className="px-6 py-4">SEED</th><th className="px-6 py-4">CSEMTV RANK</th><th className="px-6 py-4">Team</th><th className="px-6 py-4 text-center">Region</th><th className="px-6 py-4">Entry</th></tr>
         </thead>
         <tbody className="divide-y divide-slate-800/50">
-          {(participants || []).map((t, i) => (
-            <tr key={i} className="hover:bg-slate-800/30 transition-colors">
-              <td className="px-6 py-3 font-mono text-slate-400 font-bold">#{t.seed}</td>
-              <td className="px-6 py-3 font-bold cursor-pointer hover:text-blue-400 text-slate-200 hover:underline" onClick={() => onTeamClick(t)}>{t.name}</td>
-              <td className="px-6 py-3 text-center"><span className={`text-[10px] px-2.5 py-1 rounded-md font-black ${getRegionBadgeClass(t.region)}`}>{t.region}</span></td>
-              <td className="px-6 py-3 font-semibold text-slate-300">{t.invitedStage || '-'}</td>
-            </tr>
-          ))}
+          {(participants || []).map((t, i) => {
+            const prev = participants[i - 1];
+            const stageChanged = i > 0 && t.invitedStage && prev?.invitedStage && t.invitedStage !== prev.invitedStage;
+            return (
+              <tr key={i} className={`hover:bg-slate-800/30 transition-colors ${stageChanged ? 'border-t-2 border-sky-500/70' : ''}`}>
+                <td className="px-6 py-3 font-mono text-slate-400 font-bold">#{t.seed}</td>
+                <td className="px-6 py-3 font-mono text-slate-500 font-bold">#{globalRankByTeamId[t.id] || '-'}</td>
+                <td className="px-6 py-3 font-bold cursor-pointer hover:text-blue-400 text-slate-200 hover:underline" onClick={() => onTeamClick(t)}>{t.name}</td>
+                <td className="px-6 py-3 text-center"><span className={`text-[10px] px-2.5 py-1 rounded-md font-black ${getRegionBadgeClass(t.region)}`}>{t.region}</span></td>
+                <td className="px-6 py-3 font-semibold text-slate-300">{t.invitedStage || '-'}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -1136,7 +1236,7 @@ export default function App() {
       let nextTours = prev.tournaments.map(t => {
         if (t.status === 'COMPLETED') return t;
         return {
-          ...t, 
+          ...t,
           stages: t.stages.map(st => ({
              ...st,
              rounds: st.rounds?.map(r => ({ ...r, groups: r.groups?.map(g => ({ ...g, matchIds: [...g.matchIds] })) })),
@@ -1146,8 +1246,8 @@ export default function App() {
              upperRounds: st.upperRounds?.map(ur => ({ ...ur, matchIds: [...ur.matchIds] })),
              lowerRounds: st.lowerRounds?.map(lr => ({ ...lr, matchIds: [...lr.matchIds] })),
              gfRounds: st.gfRounds?.map(gr => ({ ...gr, matchIds: [...gr.matchIds] })),
-             groups: st.groups?.map(ggr => ({ 
-               ...ggr, 
+             groups: st.groups?.map(ggr => ({
+               ...ggr,
                upperRounds: ggr.upperRounds?.map(ur => ({ ...ur, matchIds: [...ur.matchIds] })),
                lowerRounds: ggr.lowerRounds?.map(lr => ({ ...lr, matchIds: [...lr.matchIds] }))
              }))
@@ -1155,11 +1255,11 @@ export default function App() {
         };
       });
 
-      let next = { 
-        ...prev, currentDate: addDays(prev.currentDate, 1), 
-        tournaments: nextTours, vrsMap: {...prev.vrsMap}, staminaMap: {...prev.staminaMap}, matchLog: {...prev.matchLog} 
+      let next = {
+        ...prev, currentDate: addDays(prev.currentDate, 1),
+        tournaments: nextTours, vrsMap: {...prev.vrsMap}, staminaMap: {...prev.staminaMap}, matchLog: {...prev.matchLog}
       };
-      
+
       next.tournaments.forEach(t => {
         if (t.status === 'PENDING' && next.currentDate >= t.invDate) {
           doInvitationAndInit(t, next);
@@ -1171,6 +1271,9 @@ export default function App() {
           processDayTick(t, next, next.currentDate);
         }
       });
+      Object.keys(next.staminaMap).forEach(id => {
+        next.staminaMap[id] = Math.min(100, (next.staminaMap[id] || 0) + 1);
+      });
       next.teams = prev.teams.map(t => ({...t, vrs: next.vrsMap[t.id], stamina: next.staminaMap[t.id]}));
       return next;
     });
@@ -1179,43 +1282,75 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      const tag = String(e.target?.tagName || '').toLowerCase();
+      const isTyping = tag === 'input' || tag === 'textarea' || e.target?.isContentEditable;
+      if (isTyping) return;
+      if (e.key === '>' || (e.key === '.' && e.shiftKey)) {
+        e.preventDefault();
+        handleAdvanceDay();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [view, trackCalendarToday, state.currentDate]);
+
   const handleCreateTournament = () => {
     setErrorMsg('');
     let eName = config.nameInput.trim();
-    if(['MAJOR','IEM','BLAST'].includes(config.format) && !eName) return setErrorMsg("Please select a city from the preset list.");
-    if(['MAJOR','IEM','BLAST'].includes(config.format) && !ESPORTS_CITIES.includes(eName)) return setErrorMsg("City must come from the preset list.");
-    if(config.invDate <= state.currentDate) return setErrorMsg("邀请日期必须在当前日期之后！");
-    if(state.tournaments.some(t => t.invDate === config.invDate)) return setErrorMsg("不能在同一天设置两个赛事的邀请日！");
-    if(config.format === 'MAJOR' && state.tournaments.filter(t => t.formatId === 'MAJOR' && t.invDate.startsWith(config.invDate.substring(0,4))).length >= 2) return setErrorMsg("Major 每年最多举办两次！");
-    if(config.format === 'EWC' && state.tournaments.some(t => t.formatId === 'EWC' && t.invDate.startsWith(config.invDate.substring(0,4)))) return setErrorMsg("EWC 每年只能举办一次！");
+    if (CITY_REQUIRED_FORMATS.has(config.format) && !eName) return setErrorMsg("Please select a city from the preset list.");
+    if (CITY_REQUIRED_FORMATS.has(config.format) && !ESPORTS_CITIES.includes(eName)) return setErrorMsg("City must come from the preset list.");
+    if (config.invDate <= state.currentDate) return setErrorMsg("Invitation date must be after current date.");
+    if (state.tournaments.some(t => t.invDate === config.invDate)) return setErrorMsg("Cannot set two tournaments with same invitation date.");
+    if (config.format === 'MAJOR' && state.tournaments.filter(t => t.formatId === 'MAJOR' && t.invDate.startsWith(config.invDate.substring(0,4))).length >= 2) return setErrorMsg("Major can only be held twice per year.");
+    if (config.format === 'EWC' && state.tournaments.some(t => t.formatId === 'EWC' && t.invDate.startsWith(config.invDate.substring(0,4)))) return setErrorMsg("EWC can only be held once per year.");
+    if (CITY_REQUIRED_FORMATS.has(config.format) && state.tournaments.some(t =>
+      t.formatId === config.format &&
+      t.invDate.startsWith(config.invDate.substring(0,4)) &&
+      inferTournamentCity(t).toLowerCase() === eName.toLowerCase()
+    )) return setErrorMsg("Same format cannot be hosted twice in the same city within one year.");
+    if (config.format === 'MAJOR') {
+      const prevMajors = state.tournaments
+        .filter(t => t.formatId === 'MAJOR' && t.invDate < config.invDate)
+        .sort((a, b) => String(b.invDate).localeCompare(String(a.invDate)));
+      if (prevMajors.length > 0) {
+        const lastMajorFinalDate = getTournamentFinalDate(prevMajors[0]);
+        if (config.invDate <= lastMajorFinalDate) {
+          return setErrorMsg("Next Major invitation deadline must be later than previous Major grand final date (" + lastMajorFinalDate + ").");
+        }
+      }
+    }
 
     setState(prev => {
       const year = config.invDate.substring(0,4);
       const newCounters = { ...prev.eplCounters };
       let tName = '';
 
-      if(config.format==='MAJOR') tName = `${eName} Major ${year}`;
-      else if(config.format==='EWC') { tName = `Esports World Cup ${newCounters.EWC}`; newCounters.EWC++; }
-      else if(config.format==='IEM') tName = `Intel Extreme Masters ${eName} ${year}`;
+      if(config.format==='MAJOR') tName = eName + ' Major ' + year;
+      else if(config.format==='EWC') { tName = 'Esports World Cup ' + newCounters.EWC; newCounters.EWC++; }
+      else if(config.format==='IEM') tName = 'Intel Extreme Masters ' + eName + ' ' + year;
       else if(config.format==='BLAST') {
-        if(config.tier==='HIGHEST') tName = `BLAST Grand Final ${eName} ${year}`;
-        else if(config.tier==='TIER_S') tName = `BLAST Rivals ${eName} ${year}`;
-        else tName = `BLAST Open ${eName} ${year}`;
+        if(config.tier==='HIGHEST') tName = 'BLAST Grand Final ' + eName + ' ' + year;
+        else if(config.tier==='TIER_S') tName = 'BLAST Rivals ' + eName + ' ' + year;
+        else tName = 'BLAST Open ' + eName + ' ' + year;
       } else if(config.format==='EPL') {
         let c = newCounters[config.tier];
-        if(config.tier==='HIGHEST') tName = `ESL PRO LEAGUE ${c}`; else if(config.tier==='TIER_S') tName = `ESL HIGH ${c}`;
-        else if(config.tier==='TIER_1') tName = `ESL POWER ${c}`; else if(config.tier==='TIER_2') tName = `ESL WILD ${c}`;
-        else if(config.tier==='TIER_3') tName = `ECL PRO ${c}`; else tName = `ECL OPEN ${c}`;
+        if(config.tier==='HIGHEST') tName = 'ESL PRO LEAGUE ' + c; else if(config.tier==='TIER_S') tName = 'ESL HIGH ' + c;
+        else if(config.tier==='TIER_1') tName = 'ESL POWER ' + c; else if(config.tier==='TIER_2') tName = 'ESL WILD ' + c;
+        else if(config.tier==='TIER_3') tName = 'ECL PRO ' + c; else tName = 'ECL OPEN ' + c;
         newCounters[config.tier]++;
       }
 
       const newTour = {
         id: prev.nextTournamentId, status: 'PENDING',
         name: String(tName), formatId: String(config.format), tierId: String(config.tier),
+        city: CITY_REQUIRED_FORMATS.has(config.format) ? String(eName) : '',
         prize: calculatePrize(config.format, config.tier),
         size: FORMATS[config.format].teams,
         invDate: String(config.invDate), startDate: addDays(config.invDate, TOURNAMENT_TIERS[config.tier].delay),
         stages: [], currentStageIdx: 0, rest: 0, placements: [], date: String(config.invDate), initialVrs: {},
+        vrsDeltaMap: {},
         majorSlots: config.format === 'MAJOR' ? normalizeMajorSlots(prev.majorSlots) : null,
         majorDirect: null
       };
@@ -1229,7 +1364,6 @@ export default function App() {
     setView('calendar');
     setScheduleDate(config.invDate);
   };
-
   const getHonorColor = (tier, placement) => {
     if (placement === '2nd') return { text: tier === 'HIGHEST' ? 'text-slate-300' : 'text-slate-500', border: tier === 'HIGHEST' ? 'border-slate-300/30' : 'border-slate-500/30' };
     switch (tier) {
@@ -1251,6 +1385,11 @@ export default function App() {
       return acc;
     }, {});
   }, [state.tournaments]);
+
+  const orderedHistoryFormats = useMemo(
+    () => ['MAJOR', 'IEM', 'EWC', 'BLAST', 'EPL'].filter(fid => groupedHistory[fid]),
+    [groupedHistory]
+  );
 
   const teamTournaments = useMemo(() => {
     if (!selectedTeam) return [];
@@ -1298,11 +1437,19 @@ export default function App() {
           <button onClick={() => { setView('calendar'); setScheduleDate(state.currentDate); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'calendar' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Calendar size={16}/> 赛事日历</button>
           {activeTour && <button onClick={() => setView('tournament')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'tournament' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-yellow-500 hover:bg-slate-800'}`}><Sword size={16}/> 现场</button>}
         </div>
-        <div className="flex flex-wrap items-center gap-4 min-w-0">
-          <div className="font-mono text-xl font-black text-orange-500 tracking-widest">{state.currentDate}</div>
-          <button onClick={handleAdvanceDay} className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 px-6 py-2 rounded-lg font-black transition-all shadow-lg hover:shadow-orange-500/30 flex items-center gap-2">下一天 <Clock size={16}/></button>
-        </div>
       </nav>
+
+
+      <div className="fixed top-4 right-4 z-50 bg-slate-900/95 border border-slate-700 rounded-2xl p-3 shadow-2xl backdrop-blur-sm">
+        <div className="font-mono text-sm md:text-base font-black text-orange-500 tracking-widest text-right mb-2">{state.currentDate}</div>
+        <button
+          onClick={handleAdvanceDay}
+          className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 px-5 py-2 rounded-lg font-black transition-all shadow-lg hover:shadow-orange-500/30 flex flex-col items-center leading-tight"
+        >
+          <span className="flex items-center gap-2">下一天 <Clock size={15}/></span>
+          <span className="text-[10px] text-orange-900">Press or Enter '&gt;'</span>
+        </button>
+      </div>
 
       <main className="max-w-[1400px] mx-auto">
         {view === 'ranking' && (
@@ -1355,6 +1502,9 @@ export default function App() {
             <div className="bg-slate-900/80 border border-slate-800 p-8 rounded-3xl flex flex-col items-center shadow-2xl">
               <Shield size={64} className="text-blue-500 mb-4" />
               <h2 className="text-4xl font-black mb-2 tracking-wide text-slate-100">{selectedTeam.name}</h2>
+              <div className="mb-4">
+                <span className={`text-[10px] px-3 py-1 rounded-md font-black ${getRegionBadgeClass(selectedTeam.region)}`}>{selectedTeam.region}</span>
+              </div>
               <div className="text-orange-500 font-mono text-2xl font-bold mb-6">VRS: {selectedTeam.vrs} <span className="text-xs text-slate-500 ml-2">STM: {selectedTeam.stamina}</span></div>
               <div className="flex gap-12 text-slate-400 w-full justify-center border-t border-slate-800/80 pt-6">
                 <div className="text-center"><div className="text-xs uppercase tracking-widest mb-1 text-slate-500 font-bold">Global Rank</div><div className="text-2xl font-black text-white">#{globalRankByTeamId[selectedTeam.id] || '-'}</div></div>
@@ -1398,8 +1548,8 @@ export default function App() {
                                     <td className="px-4 py-3 font-bold text-slate-200">{tt.name}</td>
                                     <td className="px-4 py-3 font-bold text-slate-400">{standing.placement}</td>
                                     <td className="px-4 py-3 text-right text-green-500 font-mono">${(standing.prize || 0).toLocaleString()}</td>
-                                    <td className={`px-4 py-3 text-right font-mono font-bold ${standing.vrsAfter - standing.vrsBefore >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                        {standing.vrsAfter - standing.vrsBefore >= 0 ? '+' : ''}{standing.vrsAfter - standing.vrsBefore}
+                                    <td className={`px-4 py-3 text-right font-mono font-bold ${(standing.deltaVrs ?? (standing.vrsAfter - standing.vrsBefore)) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                        {(standing.deltaVrs ?? (standing.vrsAfter - standing.vrsBefore)) >= 0 ? '+' : ''}{standing.deltaVrs ?? (standing.vrsAfter - standing.vrsBefore)}
                                     </td>
                                 </tr>
                             );
@@ -1453,7 +1603,8 @@ export default function App() {
             {Object.keys(groupedHistory).length === 0 ? (
               <div className="p-12 text-center text-slate-500 bg-slate-900/50 rounded-2xl border border-slate-800 shadow-inner">暂无赛事历史记录</div>
             ) : (
-              Object.entries(groupedHistory).map(([formatId, formatGroup]) => {
+              orderedHistoryFormats.map((formatId) => {
+                const formatGroup = groupedHistory[formatId];
                 let sortedTiers = TIER_ORDER.filter(tId => formatGroup[tId] && (historyTierFilter === 'ALL' || historyTierFilter === tId));
                 if(sortedTiers.length === 0) return null;
                 
@@ -1599,7 +1750,7 @@ export default function App() {
                 <TournamentStandingsTable standings={activeTour.standings} onTeamClick={(t) => {setSelectedTeamId(t.id); setView('team');}} />
               ) : activeTour.stages?.[0] ? <StageViewer stage={activeTour.stages[0]} /> : <div className="text-center p-12 text-slate-500">暂无可展示的赛程数据</div>
             ) : activeStageIdx === 'participants' ? (
-              <TournamentParticipantsTable participants={activeTour.participants} onTeamClick={(t) => {setSelectedTeamId(t.id); setView('team');}} getRegionBadgeClass={getRegionBadgeClass} />
+              <TournamentParticipantsTable participants={activeTour.participants} onTeamClick={(t) => {setSelectedTeamId(t.id); setView('team');}} getRegionBadgeClass={getRegionBadgeClass} globalRankByTeamId={globalRankByTeamId} />
             ) : activeStageIdx !== 'standings' && activeStageIdx !== 'participants' && activeTour.stages[activeStageIdx] ? (
               <StageViewer stage={activeTour.stages[activeStageIdx]} />
             ) : null}
