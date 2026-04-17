@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Trophy, Users, Sword, BarChart3, PlusCircle, Calendar, DollarSign, CheckCircle2, ChevronDown, ChevronUp, Check, Shield, History, ArrowDownUp, Clock, ListOrdered, ArrowLeft, ArrowRight, CheckSquare, Globe } from 'lucide-react';
 
 const MAP_POOL = [
@@ -63,8 +63,16 @@ const SCROLLBAR = "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-we
 
 const calculatePrize = (formatId, tierId) => Math.round((FORMATS[formatId]?.basePrize || 0) * (TOURNAMENT_TIERS[tierId]?.multiplier || 0));
 
+const isValidYmd = (ymd) => {
+  if (typeof ymd !== 'string') return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return false;
+  return !Number.isNaN(Date.parse(`${ymd}T12:00:00Z`));
+};
+
 const addDays = (ymd, days) => {
-  let d = new Date(ymd + "T12:00:00Z");
+  if (!isValidYmd(ymd)) return ymd;
+  const d = new Date(`${ymd}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return ymd;
   d.setDate(d.getDate() + days);
   return d.toISOString().split('T')[0];
 };
@@ -885,7 +893,8 @@ export default function App() {
     return {
       currentDate: '2026-01-01',
       teams: t, vrsMap: vMap, staminaMap: sMap,
-      tournaments: [], matchLog: {}, eplCounters: { HIGHEST:1, TIER_S:1, TIER_1:1, TIER_2:1, TIER_3:1, TIER_OPEN:1, EWC:1 }
+      tournaments: [], matchLog: {}, nextTournamentId: 1,
+      eplCounters: { HIGHEST:1, TIER_S:1, TIER_1:1, TIER_2:1, TIER_3:1, TIER_OPEN:1, EWC:1 }
     };
   });
   
@@ -932,6 +941,13 @@ export default function App() {
     }
     return filtered;
   }, [state.teams, state.vrsMap, state.staminaMap, regionFilter, sortMode]);
+
+  const globalRankByTeamId = useMemo(() => {
+    const ordered = [...state.teams].sort((a, b) => (state.vrsMap[b.id] || 0) - (state.vrsMap[a.id] || 0));
+    const map = {};
+    ordered.forEach((t, i) => { map[t.id] = i + 1; });
+    return map;
+  }, [state.teams, state.vrsMap]);
 
   const handleAdvanceDay = () => {
     setState(prev => {
@@ -986,34 +1002,38 @@ export default function App() {
     if(state.tournaments.some(t => t.invDate === config.invDate)) return setErrorMsg("不能在同一天设置两个赛事的邀请日！");
     if(config.format === 'EWC' && state.tournaments.some(t => t.formatId === 'EWC' && t.invDate.startsWith(config.invDate.substring(0,4)))) return setErrorMsg("EWC 每年只能举办一次！");
 
-    let tName = '', year = config.invDate.substring(0,4);
-    let newCounters = { ...state.eplCounters };
-    if(config.format==='MAJOR') tName = `${eName} Major ${year}`;
-    else if(config.format==='EWC') { tName = `Esports World Cup ${newCounters.EWC}`; newCounters.EWC++; }
-    else if(config.format==='IEM') tName = `Intel Extreme Masters ${eName} ${year}`;
-    else if(config.format==='BLAST') {
-      if(config.tier==='HIGHEST') tName = `BLAST Grand Final ${eName} ${year}`;
-      else if(config.tier==='TIER_S') tName = `BLAST Rivals ${eName} ${year}`;
-      else tName = `BLAST Open ${eName} ${year}`;
-    } else if(config.format==='EPL') {
-      let c = newCounters[config.tier];
-      if(config.tier==='HIGHEST') tName = `ESL PRO LEAGUE ${c}`; else if(config.tier==='TIER_S') tName = `ESL HIGH ${c}`;
-      else if(config.tier==='TIER_1') tName = `ESL POWER ${c}`; else if(config.tier==='TIER_2') tName = `ESL WILD ${c}`;
-      else if(config.tier==='TIER_3') tName = `ECL PRO ${c}`; else tName = `ECL OPEN ${c}`;
-      newCounters[config.tier]++;
-    }
+    setState(prev => {
+      const year = config.invDate.substring(0,4);
+      const newCounters = { ...prev.eplCounters };
+      let tName = '';
 
-    setState(prev => ({
-      ...prev, eplCounters: newCounters,
-      tournaments: [...prev.tournaments, {
-        id: Date.now(), status: 'PENDING',
-        name: String(tName), formatId: String(config.format), tierId: String(config.tier),
-        prize: calculatePrize(config.format, config.tier),
-        size: FORMATS[config.format].teams,
-        invDate: String(config.invDate), startDate: addDays(config.invDate, TOURNAMENT_TIERS[config.tier].delay),
-        stages: [], currentStageIdx: 0, rest: 0, placements: [], date: String(config.invDate), initialVrs: {}
-      }]
-    }));
+      if(config.format==='MAJOR') tName = `${eName} Major ${year}`;
+      else if(config.format==='EWC') { tName = `Esports World Cup ${newCounters.EWC}`; newCounters.EWC++; }
+      else if(config.format==='IEM') tName = `Intel Extreme Masters ${eName} ${year}`;
+      else if(config.format==='BLAST') {
+        if(config.tier==='HIGHEST') tName = `BLAST Grand Final ${eName} ${year}`;
+        else if(config.tier==='TIER_S') tName = `BLAST Rivals ${eName} ${year}`;
+        else tName = `BLAST Open ${eName} ${year}`;
+      } else if(config.format==='EPL') {
+        let c = newCounters[config.tier];
+        if(config.tier==='HIGHEST') tName = `ESL PRO LEAGUE ${c}`; else if(config.tier==='TIER_S') tName = `ESL HIGH ${c}`;
+        else if(config.tier==='TIER_1') tName = `ESL POWER ${c}`; else if(config.tier==='TIER_2') tName = `ESL WILD ${c}`;
+        else if(config.tier==='TIER_3') tName = `ECL PRO ${c}`; else tName = `ECL OPEN ${c}`;
+        newCounters[config.tier]++;
+      }
+
+      return {
+        ...prev, nextTournamentId: prev.nextTournamentId + 1, eplCounters: newCounters,
+        tournaments: [...prev.tournaments, {
+          id: prev.nextTournamentId, status: 'PENDING',
+          name: String(tName), formatId: String(config.format), tierId: String(config.tier),
+          prize: calculatePrize(config.format, config.tier),
+          size: FORMATS[config.format].teams,
+          invDate: String(config.invDate), startDate: addDays(config.invDate, TOURNAMENT_TIERS[config.tier].delay),
+          stages: [], currentStageIdx: 0, rest: 0, placements: [], date: String(config.invDate), initialVrs: {}
+        }]
+      };
+    });
     setView('ongoing');
     setScheduleDate(config.invDate);
   };
@@ -1042,7 +1062,9 @@ export default function App() {
 
   const teamTournaments = useMemo(() => {
     if (!selectedTeam) return [];
-    return state.tournaments.filter(t => t.status === 'COMPLETED' && t.standings?.some(s => s.team.id === selectedTeam.id)).sort((a,b) => b.id - a.id);
+    return state.tournaments
+      .filter(t => t.status === 'COMPLETED' && t.standings?.some(s => s.team.id === selectedTeam.id))
+      .sort((a, b) => String(b.startDate || '').localeCompare(String(a.startDate || '')) || b.id - a.id);
   }, [state.tournaments, selectedTeam]);
 
   const changeScheduleDate = (offset) => setScheduleDate(addDays(scheduleDate, offset));
@@ -1134,7 +1156,7 @@ export default function App() {
               <h2 className="text-4xl font-black mb-2 tracking-wide text-slate-100">{selectedTeam.name}</h2>
               <div className="text-orange-500 font-mono text-2xl font-bold mb-6">VRS: {selectedTeam.vrs} <span className="text-xs text-slate-500 ml-2">STM: {selectedTeam.stamina}</span></div>
               <div className="flex gap-12 text-slate-400 w-full justify-center border-t border-slate-800/80 pt-6">
-                <div className="text-center"><div className="text-xs uppercase tracking-widest mb-1 text-slate-500 font-bold">Global Rank</div><div className="text-2xl font-black text-white">#{displayTeams.find(t=>t.id===selectedTeam.id)?.globalRank}</div></div>
+                <div className="text-center"><div className="text-xs uppercase tracking-widest mb-1 text-slate-500 font-bold">Global Rank</div><div className="text-2xl font-black text-white">#{globalRankByTeamId[selectedTeam.id] || '-'}</div></div>
                 <div className="text-center"><div className="text-xs uppercase tracking-widest mb-1 text-slate-500 font-bold">Total Earnings</div><div className="text-2xl font-black text-green-500">${(selectedTeam.prizeTotal || 0).toLocaleString()}</div></div>
               </div>
             </div>
@@ -1168,6 +1190,7 @@ export default function App() {
                     <tbody className="divide-y divide-slate-800/50">
                         {teamTournaments.map(tt => {
                             let standing = tt.standings.find(s => s.team.id === selectedTeam.id);
+                            if (!standing) return null;
                             return (
                                 <tr key={tt.id} className="hover:bg-slate-800/30 cursor-pointer transition-colors" onClick={() => {setActiveTourId(tt.id); setActiveStageIdx('standings'); setView('tournament');}}>
                                     <td className="px-4 py-3 text-slate-500 font-mono">{tt.startDate}</td>
