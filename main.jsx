@@ -103,6 +103,18 @@ const STAR_TEAM_NAMES = new Set([
   'Vitality', 'FaZe', 'Natus Vincere', 'FUT', 'Falcons', 'G2', 'Spirit', 'MOUZ', 'FURIA', 'Astralis', 'The MongolZ', 'Aurora', 'PARIVISION', 'TYLOO', 'Liquid', 'Lynn Vision', 'BC.Game'
 ]);
 
+const TEAM_LABELS = {
+  TOP: 'TOP_TEAM',
+  STRONG: 'STRONG_TEAM',
+  STAR: 'STAR_TEAM'
+};
+
+const TEAM_LABEL_DISPLAY = {
+  [TEAM_LABELS.TOP]: '\u9876\u7ea7\u6218\u961f',
+  [TEAM_LABELS.STRONG]: '\u4e16\u754c\u5f3a\u961f',
+  [TEAM_LABELS.STAR]: '\u660e\u661f\u6218\u961f'
+};
+
 const calculatePrize = (formatId, tierId) => Math.round((FORMATS[formatId]?.basePrize || 0) * (TOURNAMENT_TIERS[tierId]?.multiplier || 0));
 
 const buildTeamRankMap = (state) => {
@@ -141,7 +153,7 @@ const calculateMatchHeat = (teamA, teamB, state, prize) => {
   for (let i = 0; i < strongCount; i++) k *= 1.5;
   for (let i = 0; i < starCount; i++) k *= 8;
 
-  const heat = Math.round(g * k);
+  const heat = Math.round(Math.sqrt(g * k));
   return Math.max(0, heat);
 };
 
@@ -805,11 +817,11 @@ const UnifiedMatchNode = ({ m }) => {
   const isBWin = isPlayed && m.winner?.id === m.tB?.id;
 
   const getTextA = () => {
-    if (!isPlayed) return 'text-slate-300';
+    if (!isPlayed) return 'text-slate-300 calendar-team-white';
     return isAWin ? 'text-green-400' : 'text-red-500 opacity-80';
   };
   const getTextB = () => {
-    if (!isPlayed) return 'text-slate-300';
+    if (!isPlayed) return 'text-slate-300 calendar-team-white';
     return isBWin ? 'text-green-400' : 'text-red-500 opacity-80';
   };
   const getBgA = () => {
@@ -1296,9 +1308,9 @@ export default function App() {
   const getTeamLevelLabel = (team) => {
     const rank = globalRankByTeamId[team?.id] || 9999;
     const labels = [];
-    if (rank <= 5) labels.push('Top Team');
-    else if (rank <= 20) labels.push('Strong Team');
-    if (STAR_TEAM_NAMES.has(String(team?.name || ''))) labels.push('Star Team');
+    if (rank <= 5) labels.push(TEAM_LABELS.TOP);
+    else if (rank <= 20) labels.push(TEAM_LABELS.STRONG);
+    if (STAR_TEAM_NAMES.has(String(team?.name || ''))) labels.push(TEAM_LABELS.STAR);
     return labels;
   };
 
@@ -1511,6 +1523,7 @@ export default function App() {
         .day-mode .text-slate-100, .day-mode .text-slate-200, .day-mode .text-slate-300 { color: #0f172a !important; }
         .day-mode .text-slate-400, .day-mode .text-slate-500 { color: #475569 !important; }
         .day-mode .shadow-2xl, .day-mode .shadow-xl, .day-mode .shadow-lg { box-shadow: 0 6px 16px rgba(15,23,42,0.08) !important; }
+        .day-mode .calendar-team-white { color: #ffffff !important; }
       `}</style>
       <div className="max-w-[1400px] mx-auto w-full flex justify-center mb-6">
         <h1 className="text-2xl md:text-4xl lg:text-[42px] xl:text-[46px] font-black text-slate-100 tracking-widest uppercase whitespace-nowrap">
@@ -1524,17 +1537,13 @@ export default function App() {
           <button onClick={() => { setView('organize'); setConfig(prev => ({ ...prev, invDate: addDays(state.currentDate, 1) })); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'organize' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><PlusCircle size={16}/> 办赛</button>
           <button onClick={() => setView('history')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'history' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><ListOrdered size={16}/> 赛事库</button>
           <button onClick={() => { setView('calendar'); setScheduleDate(state.currentDate); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'calendar' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Calendar size={16}/> 赛事日历</button>
-          {activeTour && <button onClick={() => setView('tournament')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'tournament' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-yellow-500 hover:bg-slate-800'}`}><Sword size={16}/> 现场</button>}
-          <button onClick={() => setIsDayMode(v => !v)} className="flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold bg-slate-950 text-slate-400 hover:bg-slate-800">
-            {isDayMode ? <Moon size={16}/> : <Sun size={16}/>}
-            {isDayMode ? '黑夜模式' : '白日模式'}
-          </button>
+          {activeTour && <button onClick={() => setView('tournament')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'tournament' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-yellow-500 hover:bg-slate-800'}`}><Sword size={16}/> 现场</button>}
         </div>
       </nav>
 
 
       <div className="fixed top-4 right-4 z-50 bg-slate-900/95 border border-slate-700 rounded-2xl p-3 shadow-2xl backdrop-blur-sm">
-        <div className="font-mono text-xs md:text-sm font-black text-green-500 tracking-wide text-right mb-1">Funds: ${(state.funds || 0).toLocaleString()}</div>
+        <div className="font-mono text-xs md:text-sm font-black text-green-500 tracking-wide text-right mb-1">{'\u5f53\u524d\u8d44\u91d1'}: ${(state.funds || 0).toLocaleString()}</div>
         <div className="font-mono text-sm md:text-base font-black text-orange-500 tracking-widest text-right mb-2">{state.currentDate}</div>
         <button
           onClick={handleAdvanceDay}
@@ -1542,6 +1551,13 @@ export default function App() {
         >
           <span className="flex items-center gap-2">下一天 <Clock size={15}/></span>
           <span className="text-[10px] text-orange-900">Press or Enter '&gt;'</span>
+        </button>
+        <button
+          onClick={() => setIsDayMode(v => !v)}
+          className="mt-2 w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-2 rounded-lg transition font-bold text-slate-100 flex items-center justify-center gap-2"
+        >
+          {isDayMode ? <Moon size={16}/> : <Sun size={16}/>}
+          {isDayMode ? '\u9ed1\u591c\u6a21\u5f0f' : '\u767d\u65e5\u6a21\u5f0f'}
         </button>
       </div>
 
@@ -1583,7 +1599,7 @@ export default function App() {
                         <div>{team.name}</div>
                         <div className="mt-1 flex flex-wrap gap-1">
                           {getTeamLevelLabel(team).map(tag => (
-                            <span key={tag} className={`text-[10px] px-2 py-0.5 rounded ${tag === 'Top Team' ? 'bg-yellow-500/20 text-yellow-400' : tag === 'Strong Team' ? 'bg-orange-500/20 text-orange-400' : 'bg-fuchsia-500/20 text-fuchsia-400'}`}>{tag}</span>
+                            <span key={tag} className={`text-[10px] px-2 py-0.5 rounded ${tag === TEAM_LABELS.TOP ? 'bg-yellow-500/20 text-yellow-400' : tag === TEAM_LABELS.STRONG ? 'bg-orange-500/20 text-orange-400' : 'bg-fuchsia-500/20 text-fuchsia-400'}`}>{TEAM_LABEL_DISPLAY[tag] || tag}</span>
                           ))}
                         </div>
                       </td>
@@ -1605,7 +1621,7 @@ export default function App() {
               <h2 className="text-4xl font-black mb-2 tracking-wide text-slate-100">{selectedTeam.name}</h2>
               <div className="mb-3 flex flex-wrap gap-1 justify-center">
                 {getTeamLevelLabel(selectedTeam).map(tag => (
-                  <span key={tag} className={`text-[10px] px-2 py-0.5 rounded ${tag === 'Top Team' ? 'bg-yellow-500/20 text-yellow-400' : tag === 'Strong Team' ? 'bg-orange-500/20 text-orange-400' : 'bg-fuchsia-500/20 text-fuchsia-400'}`}>{tag}</span>
+                  <span key={tag} className={`text-[10px] px-2 py-0.5 rounded ${tag === TEAM_LABELS.TOP ? 'bg-yellow-500/20 text-yellow-400' : tag === TEAM_LABELS.STRONG ? 'bg-orange-500/20 text-orange-400' : 'bg-fuchsia-500/20 text-fuchsia-400'}`}>{TEAM_LABEL_DISPLAY[tag] || tag}</span>
                 ))}
               </div>
               <div className="mb-4">
@@ -1613,7 +1629,7 @@ export default function App() {
               </div>
               <div className="text-orange-500 font-mono text-2xl font-bold mb-6">VRS: {selectedTeam.vrs} <span className="text-xs text-slate-500 ml-2">STM: {selectedTeam.stamina}</span></div>
               <div className="flex gap-12 text-slate-400 w-full justify-center border-t border-slate-800/80 pt-6">
-                <div className="text-center"><div className="text-xs uppercase tracking-widest mb-1 text-slate-500 font-bold">Global Rank</div><div className="text-2xl font-black text-white">#{globalRankByTeamId[selectedTeam.id] || '-'}</div></div>
+                <div className="text-center"><div className="text-xs uppercase tracking-widest mb-1 text-slate-500 font-bold">Global Rank</div><div className={`text-2xl font-black ${isDayMode ? 'text-black' : 'text-white'}`}>#{globalRankByTeamId[selectedTeam.id] || '-'}</div></div>
                 <div className="text-center"><div className="text-xs uppercase tracking-widest mb-1 text-slate-500 font-bold">Total Earnings</div><div className="text-2xl font-black text-green-500">${(selectedTeam.prizeTotal || 0).toLocaleString()}</div></div>
               </div>
             </div>
@@ -1674,7 +1690,7 @@ export default function App() {
               <h2 className="text-2xl font-black flex items-center gap-2 text-slate-100"><Calendar className="text-blue-500"/> 赛事日历</h2>
               <div className="flex items-center gap-2">
                  <button onClick={() => changeScheduleDate(-1)} className="bg-slate-800 p-2 rounded hover:bg-slate-700 transition"><ArrowLeft size={16}/></button>
-                 <input type="date" value={scheduleDate} onChange={e=>setScheduleDate(e.target.value)} className="bg-slate-950 border border-slate-700 text-white px-4 py-2 rounded-lg outline-none font-mono"/>
+                 <input type="date" value={scheduleDate} onChange={e=>setScheduleDate(e.target.value)} className={`bg-slate-950 border border-slate-700 px-4 py-2 rounded-lg outline-none font-mono ${isDayMode ? 'text-black' : 'text-white'}`}/>
                  <button onClick={() => changeScheduleDate(1)} className="bg-slate-800 p-2 rounded hover:bg-slate-700 transition"><ArrowRight size={16}/></button>
               </div>
             </div>
@@ -1727,7 +1743,7 @@ export default function App() {
                                 <span className="text-xs text-slate-500 font-mono">Inv: {h.invDate} | Start: {h.startDate}</span>
                                 <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${h.status==='COMPLETED'?'bg-slate-800 text-slate-400':h.status==='ACTIVE'?'bg-green-500/20 text-green-500':'bg-orange-500/20 text-orange-500'}`}>{h.status}</span>
                               </div>
-                              <h3 className="text-xl font-black mb-auto pb-4 text-white">{h.name}</h3>
+                              <h3 className={`text-xl font-black mb-auto pb-4 ${isDayMode ? 'text-black' : 'text-white'}`}>{h.name}</h3>
                               {h.status === 'COMPLETED' ? (
                                 <div className="flex items-center justify-between border-t border-slate-800 pt-4 mt-2">
                                   <div className="flex items-center gap-2"><Trophy size={16} className="text-yellow-500" /><span className="font-bold text-slate-300">{h.champion?.name}</span></div>
@@ -1833,7 +1849,7 @@ export default function App() {
               {activeTour.champion && (
                 <div className="bg-green-600/10 border border-green-500/30 p-4 rounded-xl inline-block min-w-[200px] shadow-lg">
                   <p className="text-green-500 text-[10px] font-bold uppercase tracking-widest mb-1">Champion</p>
-                  <h3 className="text-xl font-black text-white cursor-pointer hover:underline" onClick={() => {setSelectedTeamId(activeTour.champion.id); setView('team');}}>{activeTour.champion.name}</h3>
+                  <h3 className={`text-xl font-black cursor-pointer hover:underline ${isDayMode ? 'text-black' : 'text-white'}`} onClick={() => {setSelectedTeamId(activeTour.champion.id); setView('team');}}>{activeTour.champion.name}</h3>
                 </div>
               )}
             </div>
