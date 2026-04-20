@@ -1552,26 +1552,30 @@ export default function App() {
           <span className="flex items-center gap-2">下一天 <Clock size={15}/></span>
           <span className="text-[10px] text-orange-900">Press or Enter '&gt;'</span>
         </button>
-        <div className="mt-2 w-full rounded-2xl border border-slate-600 bg-slate-800/80 p-1.5 space-y-1 shadow-inner">
-          <button
-            onClick={() => setIsDayMode(false)}
-            className={`w-full rounded-xl px-3 py-2 transition font-black tracking-wide text-[11px] flex items-center justify-between ${
-              !isDayMode ? 'bg-slate-700 text-slate-100 shadow-md' : 'bg-slate-800/60 text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <span className="flex items-center gap-2"><Moon size={16}/>NIGHTMODE</span>
-            {!isDayMode && <span className="w-2 h-2 rounded-full bg-slate-100" />}
-          </button>
-          <button
-            onClick={() => setIsDayMode(true)}
-            className={`w-full rounded-xl px-3 py-2 transition font-black tracking-wide text-[11px] flex items-center justify-between ${
-              isDayMode ? 'bg-slate-100 text-slate-800 shadow-md' : 'bg-slate-700/40 text-slate-300 hover:text-white'
-            }`}
-          >
-            <span className="flex items-center gap-2"><Sun size={16}/>DAYMODE</span>
-            {isDayMode && <span className="w-2 h-2 rounded-full bg-slate-900" />}
-          </button>
-        </div>
+        <button
+          onClick={() => setIsDayMode(v => !v)}
+          className={`mt-2 w-full rounded-full px-3 py-2.5 border transition-all shadow-inner font-black tracking-wide text-[12px] flex items-center ${
+            isDayMode
+              ? 'bg-slate-100 border-slate-300 text-slate-800 justify-between'
+              : 'bg-[#2f3338] border-slate-600 text-slate-100 justify-start gap-2'
+          }`}
+        >
+          {isDayMode ? (
+            <>
+              <span>DAYMODE</span>
+              <span className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center">
+                <Sun size={16} className="text-slate-800" />
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center">
+                <Moon size={16} className="text-slate-800" />
+              </span>
+              <span>NIGHTMODE</span>
+            </>
+          )}
+        </button>
       </div>
 
       <main className="max-w-[1400px] mx-auto">
