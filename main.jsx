@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Trophy, Users, Sword, BarChart3, PlusCircle, Calendar, DollarSign, CheckCircle2, ChevronDown, ChevronUp, Check, Shield, History, ArrowDownUp, Clock, ListOrdered, ArrowLeft, ArrowRight, Globe } from 'lucide-react';
+import { Trophy, Users, Sword, BarChart3, PlusCircle, Calendar, DollarSign, CheckCircle2, ChevronDown, ChevronUp, Check, Shield, History, ArrowDownUp, Clock, ListOrdered, ArrowLeft, ArrowRight, Globe, Sun, Moon } from 'lucide-react';
 
 const MAP_POOL = [
   { name: "Mirage", weight: 70 }, { name: "Nuke", weight: 60 }, { name: "Ancient", weight: 50 },
@@ -99,7 +99,51 @@ const ESPORTS_CITIES = [
 
 const SCROLLBAR = "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-[#0f172a] [&::-webkit-scrollbar-track]:rounded [&::-webkit-scrollbar-thumb]:bg-[#1e3a8a] [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb:hover]:bg-[#2563eb]";
 
+const STAR_TEAM_NAMES = new Set([
+  'Vitality', 'FaZe', 'Natus Vincere', 'FUT', 'Falcons', 'G2', 'Spirit', 'MOUZ', 'FURIA', 'Astralis', 'The MongolZ', 'Aurora', 'PARIVISION', 'TYLOO', 'Liquid', 'Lynn Vision', 'BC.Game'
+]);
+
 const calculatePrize = (formatId, tierId) => Math.round((FORMATS[formatId]?.basePrize || 0) * (TOURNAMENT_TIERS[tierId]?.multiplier || 0));
+
+const buildTeamRankMap = (state) => {
+  const ordered = [...state.teams].sort((a, b) => (state.vrsMap[b.id] || 0) - (state.vrsMap[a.id] || 0));
+  const rankMap = {};
+  ordered.forEach((team, index) => { rankMap[team.id] = index + 1; });
+  return rankMap;
+};
+
+const getTeamIdentity = (team, rankMap) => {
+  const rank = rankMap[team?.id] || 9999;
+  return {
+    rank,
+    isTopTeam: rank <= 5,
+    isStrongTeam: rank >= 6 && rank <= 20,
+    isStarTeam: STAR_TEAM_NAMES.has(String(team?.name || ''))
+  };
+};
+
+const calculateMatchHeat = (teamA, teamB, state, prize) => {
+  const vrsA = state.vrsMap[teamA.id] || 1000;
+  const vrsB = state.vrsMap[teamB.id] || 1000;
+  const d = (prize || 0) / 2000000;
+  const g = vrsA * vrsB * d * d;
+
+  const rankMap = buildTeamRankMap(state);
+  const idA = getTeamIdentity(teamA, rankMap);
+  const idB = getTeamIdentity(teamB, rankMap);
+
+  let k = 1;
+  const topCount = Number(idA.isTopTeam) + Number(idB.isTopTeam);
+  const strongCount = Number(idA.isStrongTeam) + Number(idB.isStrongTeam);
+  const starCount = Number(idA.isStarTeam) + Number(idB.isStarTeam);
+
+  for (let i = 0; i < topCount; i++) k *= 5;
+  for (let i = 0; i < strongCount; i++) k *= 1.5;
+  for (let i = 0; i < starCount; i++) k *= 8;
+
+  const heat = Math.round(g * k);
+  return Math.max(0, heat);
+};
 
 const isValidYmd = (ymd) => {
   if (typeof ymd !== 'string') return false;
@@ -215,7 +259,7 @@ const assignDatesNodes = (nodes, startDate, isPlayoff) => {
   return dayCount > 0 ? addDays(cur, 1) : cur;
 };
 
-const createMatchNode = (id, name, group, isBO5, tag) => ({ id, name: String(name), groupName: String(group), tA: null, tB: null, winnerTo: null, loserTo: null, status: 'PENDING', isBO5, loserTag: tag ? String(tag) : null, date: null, details: [] });
+const createMatchNode = (id, name, group, isBO5, tag) => ({ id, name: String(name), groupName: String(group), tA: null, tB: null, winnerTo: null, loserTo: null, status: 'PENDING', isBO5, loserTag: tag ? String(tag) : null, date: null, details: [], heat: 0 });
 
 const buildSwissStage = (name, teamCount, mIdStart, startDate) => {
   let rounds = [], nodes = [], mId = mIdStart;
@@ -518,6 +562,7 @@ const doInvitationAndInit = (tour, state) => {
 
 const finishTournament = (tour, state) => {
   tour.status = 'COMPLETED';
+  tour.totalHeat = tour.totalHeat || 0;
   const validPrize = tour.prize || 0;
   let totalW = tour.placements.reduce((sum, p) => sum + (PLACEMENT_WEIGHTS[p.tag] || 0), 0) || 1;
   
@@ -567,6 +612,8 @@ const finishTournament = (tour, state) => {
   for(let id in state.staminaMap) {
     state.staminaMap[id] = Math.min(100, (state.staminaMap[id]||100) + Math.floor(Math.random()*21)+10);
   }
+
+  state.funds = (state.funds || 0) + Math.round(tour.totalHeat || 0);
 };
 
 const getSwissElimTag = (b, w) => {
@@ -576,7 +623,8 @@ const getSwissElimTag = (b, w) => {
   return "Unknown";
 };
 
-const playMatchEngineInstance = (m, state) => {
+const playMatchEngineInstance = (m, state, tourPrize) => {
+  m.heat = calculateMatchHeat(m.tA, m.tB, state, tourPrize);
   let res = playMatchEngine(m.tA, m.tB, state, m.isBO5);
   Object.assign(m, res); m.status = 'PLAYED';
   return m;
@@ -590,7 +638,8 @@ const processDayTick = (tour, state, dateStr) => {
   let unplayedToday = stg.nodes.filter(m => m.status === 'PENDING' && m.date === dateStr && m.tA && m.tB);
   
   unplayedToday.forEach(m => {
-    playMatchEngineInstance(m, state);
+    playMatchEngineInstance(m, state, tour.prize || 0);
+    tour.totalHeat = (tour.totalHeat || 0) + (m.heat || 0);
     tour.vrsDeltaMap = tour.vrsDeltaMap || {};
     tour.vrsDeltaMap[m.tA.id] = (tour.vrsDeltaMap[m.tA.id] || 0) + (m.chgA || 0);
     tour.vrsDeltaMap[m.tB.id] = (tour.vrsDeltaMap[m.tB.id] || 0) + (m.chgB || 0);
@@ -798,6 +847,12 @@ const UnifiedMatchNode = ({ m }) => {
              {open ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
             <span className="text-[9px]">展开详情</span>
           </button>
+          {isPlayed && (
+            <div className="px-3 py-1.5 border-t border-[#1e293b]/70 text-[10px] flex justify-between items-center">
+              <span className="text-slate-500 font-bold tracking-wider uppercase">Heat</span>
+              <span className="text-orange-400 font-mono font-black">{Math.round(m.heat || 0).toLocaleString()}</span>
+            </div>
+          )}
           {open && m.details && m.details.length > 0 && (
              <div className="p-2 pt-0 space-y-2 mt-1 border-t border-[#1e293b]/50">
                 {m.details.map((d, idx) => (
@@ -1160,6 +1215,7 @@ export default function App() {
       currentDate: '2026-01-01',
       teams: t, vrsMap: vMap, staminaMap: sMap,
       tournaments: [], matchLog: {}, nextTournamentId: 1,
+      funds: 10000000,
       majorSlots: createDefaultMajorSlots(),
       eplCounters: { HIGHEST:1, TIER_S:1, TIER_1:1, TIER_2:1, TIER_3:1, TIER_OPEN:1, EWC:1 }
     };
@@ -1177,6 +1233,7 @@ export default function App() {
   const [historyTierFilter, setHistoryTierFilter] = useState('ALL');
   const [trackCalendarToday, setTrackCalendarToday] = useState(true);
   const [citySearch, setCitySearch] = useState('');
+  const [isDayMode, setIsDayMode] = useState(false);
 
   const cityLookup = useMemo(() => {
     const map = {};
@@ -1199,6 +1256,11 @@ export default function App() {
   };
 
   const activeTour = useMemo(() => state.tournaments.find(t => t.id === activeTourId), [state.tournaments, activeTourId]);
+  const activeTourHeat = useMemo(() => {
+    if (!activeTour) return 0;
+    if (Number.isFinite(activeTour.totalHeat)) return activeTour.totalHeat;
+    return (activeTour.stages || []).reduce((sum, st) => sum + (st.nodes || []).reduce((inner, node) => inner + (node.heat || 0), 0), 0);
+  }, [activeTour]);
   const selectedTeam = useMemo(() => {
     if(!selectedTeamId) return null;
     let t = state.teams.find(x=>x.id===selectedTeamId);
@@ -1230,6 +1292,15 @@ export default function App() {
     ordered.forEach((t, i) => { map[t.id] = i + 1; });
     return map;
   }, [state.teams, state.vrsMap]);
+
+  const getTeamLevelLabel = (team) => {
+    const rank = globalRankByTeamId[team?.id] || 9999;
+    const labels = [];
+    if (rank <= 5) labels.push('Top Team');
+    else if (rank <= 20) labels.push('Strong Team');
+    if (STAR_TEAM_NAMES.has(String(team?.name || ''))) labels.push('Star Team');
+    return labels;
+  };
 
   const handleAdvanceDay = () => {
     setState(prev => {
@@ -1299,6 +1370,7 @@ export default function App() {
   const handleCreateTournament = () => {
     setErrorMsg('');
     let eName = config.nameInput.trim();
+    const tournamentPrize = calculatePrize(config.format, config.tier);
     if (CITY_REQUIRED_FORMATS.has(config.format) && !eName) return setErrorMsg("Please select a city from the preset list.");
     if (CITY_REQUIRED_FORMATS.has(config.format) && !ESPORTS_CITIES.includes(eName)) return setErrorMsg("City must come from the preset list.");
     if (config.invDate <= state.currentDate) return setErrorMsg("Invitation date must be after current date.");
@@ -1321,8 +1393,10 @@ export default function App() {
         }
       }
     }
+    if ((state.funds || 0) < tournamentPrize) return setErrorMsg("Insufficient funds to create this tournament.");
 
     setState(prev => {
+      if ((prev.funds || 0) < tournamentPrize) return prev;
       const year = config.invDate.substring(0,4);
       const newCounters = { ...prev.eplCounters };
       let tName = '';
@@ -1346,18 +1420,19 @@ export default function App() {
         id: prev.nextTournamentId, status: 'PENDING',
         name: String(tName), formatId: String(config.format), tierId: String(config.tier),
         city: CITY_REQUIRED_FORMATS.has(config.format) ? String(eName) : '',
-        prize: calculatePrize(config.format, config.tier),
+        prize: tournamentPrize,
         size: FORMATS[config.format].teams,
         invDate: String(config.invDate), startDate: addDays(config.invDate, TOURNAMENT_TIERS[config.tier].delay),
         stages: [], currentStageIdx: 0, rest: 0, placements: [], date: String(config.invDate), initialVrs: {},
         vrsDeltaMap: {},
+        totalHeat: 0,
         majorSlots: config.format === 'MAJOR' ? normalizeMajorSlots(prev.majorSlots) : null,
         majorDirect: null
       };
       newTour.stages = buildStagesForTournament(newTour);
 
       return {
-        ...prev, nextTournamentId: prev.nextTournamentId + 1, eplCounters: newCounters,
+        ...prev, nextTournamentId: prev.nextTournamentId + 1, eplCounters: newCounters, funds: (prev.funds || 0) - tournamentPrize,
         tournaments: [...prev.tournaments, newTour]
       };
     });
@@ -1421,8 +1496,22 @@ export default function App() {
     return all.sort((a,b) => String(a.tourName).localeCompare(String(b.tourName)) || String(a.name).localeCompare(String(b.name)));
   }, [state.tournaments, scheduleDate]);
 
+  const appRootClass = isDayMode
+    ? "day-mode min-h-screen bg-slate-100 text-slate-900 p-4 md:p-8 font-sans"
+    : "min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans";
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
+    <div className={appRootClass}>
+      <style>{`
+        .day-mode .bg-slate-950 { background-color: #f8fafc !important; }
+        .day-mode .bg-slate-900, .day-mode .bg-slate-900\\/80, .day-mode .bg-slate-900\\/95 { background-color: #ffffff !important; }
+        .day-mode .bg-slate-900\\/50, .day-mode .bg-slate-900\\/40 { background-color: #f8fafc !important; }
+        .day-mode .bg-slate-800, .day-mode .bg-slate-800\\/50 { background-color: #e2e8f0 !important; }
+        .day-mode .border-slate-800, .day-mode .border-slate-700 { border-color: #cbd5e1 !important; }
+        .day-mode .text-slate-100, .day-mode .text-slate-200, .day-mode .text-slate-300 { color: #0f172a !important; }
+        .day-mode .text-slate-400, .day-mode .text-slate-500 { color: #475569 !important; }
+        .day-mode .shadow-2xl, .day-mode .shadow-xl, .day-mode .shadow-lg { box-shadow: 0 6px 16px rgba(15,23,42,0.08) !important; }
+      `}</style>
       <div className="max-w-[1400px] mx-auto w-full flex justify-center mb-6">
         <h1 className="text-2xl md:text-4xl lg:text-[42px] xl:text-[46px] font-black text-slate-100 tracking-widest uppercase whitespace-nowrap">
           Counter-Strike 2 Event Manager
@@ -1436,11 +1525,16 @@ export default function App() {
           <button onClick={() => setView('history')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'history' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><ListOrdered size={16}/> 赛事库</button>
           <button onClick={() => { setView('calendar'); setScheduleDate(state.currentDate); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'calendar' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Calendar size={16}/> 赛事日历</button>
           {activeTour && <button onClick={() => setView('tournament')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'tournament' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-yellow-500 hover:bg-slate-800'}`}><Sword size={16}/> 现场</button>}
+          <button onClick={() => setIsDayMode(v => !v)} className="flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold bg-slate-950 text-slate-400 hover:bg-slate-800">
+            {isDayMode ? <Moon size={16}/> : <Sun size={16}/>}
+            {isDayMode ? '黑夜模式' : '白日模式'}
+          </button>
         </div>
       </nav>
 
 
       <div className="fixed top-4 right-4 z-50 bg-slate-900/95 border border-slate-700 rounded-2xl p-3 shadow-2xl backdrop-blur-sm">
+        <div className="font-mono text-xs md:text-sm font-black text-green-500 tracking-wide text-right mb-1">Funds: ${(state.funds || 0).toLocaleString()}</div>
         <div className="font-mono text-sm md:text-base font-black text-orange-500 tracking-widest text-right mb-2">{state.currentDate}</div>
         <button
           onClick={handleAdvanceDay}
@@ -1485,7 +1579,14 @@ export default function App() {
                       <td className="px-6 py-4 text-center">
                          <span className={`text-[10px] px-2.5 py-1 rounded-md font-black ${getRegionBadgeClass(team.region)}`}>{team.region}</span>
                       </td>
-                      <td className="px-6 py-4 font-bold cursor-pointer hover:text-blue-400 text-slate-200 hover:underline" onClick={() => { setSelectedTeamId(team.id); setView('team'); }}>{team.name}</td>
+                      <td className="px-6 py-4 font-bold cursor-pointer hover:text-blue-400 text-slate-200 hover:underline" onClick={() => { setSelectedTeamId(team.id); setView('team'); }}>
+                        <div>{team.name}</div>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {getTeamLevelLabel(team).map(tag => (
+                            <span key={tag} className={`text-[10px] px-2 py-0.5 rounded ${tag === 'Top Team' ? 'bg-yellow-500/20 text-yellow-400' : tag === 'Strong Team' ? 'bg-orange-500/20 text-orange-400' : 'bg-fuchsia-500/20 text-fuchsia-400'}`}>{tag}</span>
+                          ))}
+                        </div>
+                      </td>
                       <td className="px-6 py-4 text-orange-400 font-mono font-bold">{team.vrs}</td>
                       <td className="px-6 py-4 text-center font-mono font-bold text-cyan-300">{Math.max(0, Math.min(100, Math.round(team.stamina || 0)))}%</td>
                       <td className="px-6 py-4 text-right text-green-500 font-mono font-bold">${(team.prizeTotal || 0).toLocaleString()}</td>
@@ -1502,6 +1603,11 @@ export default function App() {
             <div className="bg-slate-900/80 border border-slate-800 p-8 rounded-3xl flex flex-col items-center shadow-2xl">
               <Shield size={64} className="text-blue-500 mb-4" />
               <h2 className="text-4xl font-black mb-2 tracking-wide text-slate-100">{selectedTeam.name}</h2>
+              <div className="mb-3 flex flex-wrap gap-1 justify-center">
+                {getTeamLevelLabel(selectedTeam).map(tag => (
+                  <span key={tag} className={`text-[10px] px-2 py-0.5 rounded ${tag === 'Top Team' ? 'bg-yellow-500/20 text-yellow-400' : tag === 'Strong Team' ? 'bg-orange-500/20 text-orange-400' : 'bg-fuchsia-500/20 text-fuchsia-400'}`}>{tag}</span>
+                ))}
+              </div>
               <div className="mb-4">
                 <span className={`text-[10px] px-3 py-1 rounded-md font-black ${getRegionBadgeClass(selectedTeam.region)}`}>{selectedTeam.region}</span>
               </div>
@@ -1721,6 +1827,7 @@ export default function App() {
               <div className="flex justify-center gap-6 text-slate-400 text-xs mb-6 font-mono">
                 <span>INV: {activeTour.invDate}</span><span>START: {activeTour.startDate}</span>
                 <span className="text-green-500">PRIZE: ${(activeTour.prize || 0).toLocaleString()}</span>
+                <span className="text-orange-500">HEAT SUM: {Math.round(activeTourHeat || 0).toLocaleString()}</span>
                 <span className="text-orange-400 uppercase tracking-widest">STATUS: {activeTour.status}</span>
               </div>
               {activeTour.champion && (

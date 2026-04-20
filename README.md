@@ -1,7 +1,34 @@
-# Counter-Strike Event Manager
+﻿# Counter-Strike Event Manager
 
 你也看CS？看腻了固有的比赛？等烦了主办方发布比赛？现在机会就在你眼前！
 
+## Beta Version 0.7
+
+- 引入战队身份体系：
+  - 顶级战队：世界排名前 5。
+  - 强队：世界排名第 6~20。
+  - 明星队：指定名单（可与顶级/强队身份叠加）。
+  - 明星战队名单：``Vitality, FaZe, Natus Vincere, FUT, Falcons, G2, Spirit, MOUZ, FURIA, Astralis, The MongolZ, Aurora, PARIVISION, TYLOO, Liquid, Lynn Vision, BC.Game``。
+- 引入热度系统：
+  - 按 VRS、赛事奖金与队伍身份系数计算每场比赛热度。
+  - 热度公式：
+    - 设两支战队的 VRS 积分分别为 $a$、$b$，赛事奖金为 $c$，令 $d=\frac{c}{2000000}$。
+    - 原始热度为 $g=a\cdot b\cdot d^2$。
+    - 比例系数 $k$ 初始为 $1$：
+      - 两支队伍中每有 1 支顶级战队，则 $k=k\cdot 5$。
+      - 两支队伍中每有 1 支强队，则 $k=k\cdot 1.5$。
+      - 两支队伍中每有 1 支明星队，则 $k=k\cdot 8$。
+    - 最终热度为 $h=g\cdot k$。
+  - 比赛结束后，在每场比赛卡片下部展示单场热度。
+  - 赛事页展示本届赛事累计热度。
+- 引入资金系统：
+  - 初始资金为 $10000000$ 美元。
+  - 办赛时从资金中扣除奖金，资金不足则无法创建赛事。
+  - 赛事结束时，设本届赛事累计热度为 $h$，则资金回复 $h$ 美元。
+- 新增白日/黑夜模式切换功能
+  - 新增白日模式配色，地区标签颜色保持不变。
+  - 默认为黑夜模式。
+  
 ## Beta Version 0.6
 
 - 战队页新增地区信息展示。  
@@ -24,12 +51,12 @@
   - 新增“跟踪当天”勾选项。
 - 改进 Major 规则与流程。
   - 限制 Major 每年最多举办两次（按邀请截止日期）。
-  - 新增 EU / AM / AS 分地区名额邀请，并支持按上届 Major 成绩动态调整直邀名额。
-  - 将 Challengers / Legends / Champions 统一更名为 Stage 1 / Stage 2 / Stage 3。
+  - 新增 ``EU`` / ``AM`` / ``AS`` 分地区名额邀请，并支持按上届 Major 成绩动态调整直邀名额。
+  - 将 ``Challengers`` / ``Legends`` / ``Champions`` 统一更名为 ``Stage 1`` / ``Stage 2`` / ``Stage 3``。
   - 邀请预测页按地区拆分并区分三阶段名额；参赛名单新增阶段差异展示。
-- 统一 EU / AM / AS 地区标签样式与配色。
+- 统一 ``EU`` / ``AM`` / ``AS`` 地区标签样式与配色。
 - 每次进入“办赛”页时，邀请截止日期默认填充为当前日期的下一天。
-- 将 “CSTV” 更新为 “CSEMTV”。
+- 将 ``CSTV`` 更新为 ``CSEMTV``。
 
 ## Beta Version 0.4
 
