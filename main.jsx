@@ -1084,7 +1084,7 @@ const StageViewer = ({ stage }) => {
   );
 };
 
-const TournamentStandingsTable = ({ standings, onTeamClick }) => (
+const TournamentStandingsTable = ({ standings, onTeamClick, isDayMode }) => (
   <div className="bg-slate-900/80 rounded-2xl border border-slate-800 overflow-hidden">
     <div className="p-6 border-b border-slate-800 flex items-center gap-2">
       <Trophy className="text-yellow-500" />
@@ -1109,7 +1109,7 @@ const TournamentStandingsTable = ({ standings, onTeamClick }) => (
               <td className="px-6 py-3 font-bold cursor-pointer hover:text-blue-400 hover:underline text-slate-200" onClick={() => onTeamClick(s.team)}>{s.team.name}</td>
               <td className="px-6 py-3 text-right text-green-500 font-mono font-bold">${(s.prize || 0).toLocaleString()}</td>
               <td className="px-6 py-3 font-mono text-slate-500">{s.vrsBefore}</td>
-              <td className="px-6 py-3 font-mono text-white">{s.vrsAfter}</td>
+              <td className={`px-6 py-3 font-mono ${isDayMode ? 'text-black' : 'text-white'}`}>{s.vrsAfter}</td>
               <td className={`px-6 py-3 font-mono font-bold text-right ${(s.deltaVrs ?? (s.vrsAfter - s.vrsBefore)) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                 {(s.deltaVrs ?? (s.vrsAfter - s.vrsBefore)) >= 0 ? '+' : ''}{s.deltaVrs ?? (s.vrsAfter - s.vrsBefore)}
               </td>
@@ -1552,13 +1552,26 @@ export default function App() {
           <span className="flex items-center gap-2">下一天 <Clock size={15}/></span>
           <span className="text-[10px] text-orange-900">Press or Enter '&gt;'</span>
         </button>
-        <button
-          onClick={() => setIsDayMode(v => !v)}
-          className="mt-2 w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-2 rounded-lg transition font-bold text-slate-100 flex items-center justify-center gap-2"
-        >
-          {isDayMode ? <Moon size={16}/> : <Sun size={16}/>}
-          {isDayMode ? '\u9ed1\u591c\u6a21\u5f0f' : '\u767d\u65e5\u6a21\u5f0f'}
-        </button>
+        <div className="mt-2 w-full rounded-2xl border border-slate-600 bg-slate-800/80 p-1.5 space-y-1 shadow-inner">
+          <button
+            onClick={() => setIsDayMode(false)}
+            className={`w-full rounded-xl px-3 py-2 transition font-black tracking-wide text-[11px] flex items-center justify-between ${
+              !isDayMode ? 'bg-slate-700 text-slate-100 shadow-md' : 'bg-slate-800/60 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span className="flex items-center gap-2"><Moon size={16}/>NIGHTMODE</span>
+            {!isDayMode && <span className="w-2 h-2 rounded-full bg-slate-100" />}
+          </button>
+          <button
+            onClick={() => setIsDayMode(true)}
+            className={`w-full rounded-xl px-3 py-2 transition font-black tracking-wide text-[11px] flex items-center justify-between ${
+              isDayMode ? 'bg-slate-100 text-slate-800 shadow-md' : 'bg-slate-700/40 text-slate-300 hover:text-white'
+            }`}
+          >
+            <span className="flex items-center gap-2"><Sun size={16}/>DAYMODE</span>
+            {isDayMode && <span className="w-2 h-2 rounded-full bg-slate-900" />}
+          </button>
+        </div>
       </div>
 
       <main className="max-w-[1400px] mx-auto">
@@ -1788,7 +1801,7 @@ export default function App() {
               </div>
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">3. 邀请截止日期</label>
-                <input type="date" value={config.invDate} min={addDays(state.currentDate, 1)} onChange={e => setConfig({...config, invDate: e.target.value})} className="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-white font-mono outline-none"/>
+                <input type="date" value={config.invDate} min={addDays(state.currentDate, 1)} onChange={e => setConfig({...config, invDate: e.target.value})} className={`w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 font-mono outline-none ${isDayMode ? 'text-black' : 'text-white'}`}/>
               </div>
               {['MAJOR', 'IEM', 'BLAST'].includes(config.format) && (
                 <div>
@@ -1870,7 +1883,7 @@ export default function App() {
 
             {activeStageIdx === 'standings' ? (
               activeTour.status === 'COMPLETED' ? (
-                <TournamentStandingsTable standings={activeTour.standings} onTeamClick={(t) => {setSelectedTeamId(t.id); setView('team');}} />
+                <TournamentStandingsTable standings={activeTour.standings} onTeamClick={(t) => {setSelectedTeamId(t.id); setView('team');}} isDayMode={isDayMode} />
               ) : activeTour.stages?.[0] ? <StageViewer stage={activeTour.stages[0]} /> : <div className="text-center p-12 text-slate-500">暂无可展示的赛程数据</div>
             ) : activeStageIdx === 'participants' ? (
               <TournamentParticipantsTable participants={activeTour.participants} onTeamClick={(t) => {setSelectedTeamId(t.id); setView('team');}} getRegionBadgeClass={getRegionBadgeClass} globalRankByTeamId={globalRankByTeamId} />
