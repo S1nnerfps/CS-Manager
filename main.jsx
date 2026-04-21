@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Trophy, Users, Sword, BarChart3, PlusCircle, Calendar, DollarSign, CheckCircle2, ChevronDown, ChevronUp, Check, Shield, History, ArrowDownUp, Clock, ListOrdered, ArrowLeft, ArrowRight, Globe, Sun, Moon } from 'lucide-react';
 
 const MAP_POOL = [
@@ -647,7 +647,8 @@ const processDayTick = (tour, state, dateStr) => {
   if (tour.rest > 0) { tour.rest--; return; }
   
   let stg = tour.stages[tour.currentStageIdx];
-  let unplayedToday = stg.nodes.filter(m => m.status === 'PENDING' && m.date === dateStr && m.tA && m.tB);
+  // Catch up any overdue pending matches to avoid stuck tournaments when date passes a scheduled day.
+  let unplayedToday = stg.nodes.filter(m => m.status === 'PENDING' && m.date && m.date <= dateStr && m.tA && m.tB);
   
   unplayedToday.forEach(m => {
     playMatchEngineInstance(m, state, tour.prize || 0);
@@ -1246,6 +1247,8 @@ export default function App() {
   const [trackCalendarToday, setTrackCalendarToday] = useState(true);
   const [citySearch, setCitySearch] = useState('');
   const [isDayMode, setIsDayMode] = useState(false);
+  const organizeDateInputRef = useRef(null);
+  const scheduleDateInputRef = useRef(null);
 
   const cityLookup = useMemo(() => {
     const map = {};
@@ -1312,6 +1315,13 @@ export default function App() {
     else if (rank <= 20) labels.push(TEAM_LABELS.STRONG);
     if (STAR_TEAM_NAMES.has(String(team?.name || ''))) labels.push(TEAM_LABELS.STAR);
     return labels;
+  };
+
+  const openDatePicker = (inputRef) => {
+    const input = inputRef?.current;
+    if (!input) return;
+    if (typeof input.showPicker === 'function') input.showPicker();
+    else input.focus();
   };
 
   const handleAdvanceDay = () => {
@@ -1547,7 +1557,7 @@ export default function App() {
         <div className="font-mono text-sm md:text-base font-black text-orange-500 tracking-widest text-right mb-2">{state.currentDate}</div>
         <button
           onClick={handleAdvanceDay}
-          className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 px-5 py-2 rounded-lg font-black transition-all shadow-lg hover:shadow-orange-500/30 flex flex-col items-center leading-tight"
+          className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 px-5 py-2 rounded-lg font-black transition-all shadow-lg hover:shadow-orange-500/30 flex flex-col items-center leading-tight"
         >
           <span className="flex items-center gap-2">下一天 <Clock size={15}/></span>
           <span className="text-[10px] text-orange-900">Press or Enter '&gt;'</span>
@@ -1707,7 +1717,12 @@ export default function App() {
               <h2 className="text-2xl font-black flex items-center gap-2 text-slate-100"><Calendar className="text-blue-500"/> 赛事日历</h2>
               <div className="flex items-center gap-2">
                  <button onClick={() => changeScheduleDate(-1)} className="bg-slate-800 p-2 rounded hover:bg-slate-700 transition"><ArrowLeft size={16}/></button>
-                 <input type="date" value={scheduleDate} onChange={e=>setScheduleDate(e.target.value)} className={`bg-slate-950 border border-slate-700 px-4 py-2 rounded-lg outline-none font-mono ${isDayMode ? 'text-black' : 'text-white'}`}/>
+                 <div className="flex items-center gap-1 bg-slate-950 border border-slate-700 rounded-lg px-2">
+                   <input ref={scheduleDateInputRef} type="date" value={scheduleDate} onChange={e=>setScheduleDate(e.target.value)} className={`bg-transparent px-2 py-2 rounded-lg outline-none font-mono ${isDayMode ? 'text-black' : 'text-white'}`}/>
+                   <button type="button" onClick={() => openDatePicker(scheduleDateInputRef)} className="p-1 rounded hover:bg-slate-800/60 transition" aria-label="Open calendar">
+                     <Calendar size={14} className={isDayMode ? 'text-slate-700' : 'text-slate-300'} />
+                   </button>
+                 </div>
                  <button onClick={() => changeScheduleDate(1)} className="bg-slate-800 p-2 rounded hover:bg-slate-700 transition"><ArrowRight size={16}/></button>
               </div>
             </div>
@@ -1805,7 +1820,12 @@ export default function App() {
               </div>
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">3. 邀请截止日期</label>
-                <input type="date" value={config.invDate} min={addDays(state.currentDate, 1)} onChange={e => setConfig({...config, invDate: e.target.value})} className={`w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 font-mono outline-none ${isDayMode ? 'text-black' : 'text-white'}`}/>
+                <div className="w-full flex items-center gap-1 bg-slate-950 border border-slate-700 focus-within:border-blue-500 rounded-xl px-2">
+                  <input ref={organizeDateInputRef} type="date" value={config.invDate} min={addDays(state.currentDate, 1)} onChange={e => setConfig({...config, invDate: e.target.value})} className={`w-full bg-transparent px-2 py-3 font-mono outline-none ${isDayMode ? 'text-black' : 'text-white'}`}/>
+                  <button type="button" onClick={() => openDatePicker(organizeDateInputRef)} className="p-1 rounded hover:bg-slate-800/60 transition" aria-label="Open calendar">
+                    <Calendar size={15} className={isDayMode ? 'text-slate-700' : 'text-slate-300'} />
+                  </button>
+                </div>
               </div>
               {['MAJOR', 'IEM', 'BLAST'].includes(config.format) && (
                 <div>
