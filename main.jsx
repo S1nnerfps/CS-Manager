@@ -134,7 +134,7 @@ const getTeamIdentity = (team, rankMap) => {
   };
 };
 
-const calculateMatchHeat = (teamA, teamB, state, prize) => {
+const calculateMatchHeat = (teamA, teamB, state, prize, r = 1) => {
   const vrsA = state.vrsMap[teamA.id] || 1000;
   const vrsB = state.vrsMap[teamB.id] || 1000;
   const d = (prize || 0) / 2000000;
@@ -153,7 +153,7 @@ const calculateMatchHeat = (teamA, teamB, state, prize) => {
   for (let i = 0; i < strongCount; i++) k *= 1.5;
   for (let i = 0; i < starCount; i++) k *= 8;
 
-  const heat = Math.round(Math.sqrt(g * k));
+  const heat = Math.round(Math.sqrt(g * k * (Number(r) > 0 ? Number(r) : 1)));
   return Math.max(0, heat);
 };
 
@@ -636,7 +636,15 @@ const getSwissElimTag = (b, w) => {
 };
 
 const playMatchEngineInstance = (m, state, tourPrize) => {
-  m.heat = calculateMatchHeat(m.tA, m.tB, state, tourPrize);
+  const getHeatRoundMultiplier = (match) => {
+    const name = String(match?.name || '').toLowerCase();
+    if (name.includes('quarterfinal')) return 2;
+    if (name.includes('semifinal') || name.includes('semi-final') || name.includes('semi final') || name.includes('upper sf') || name.includes('lower sf')) return 5;
+    if (name.includes('final')) return 20;
+    return 1;
+  };
+  const r = getHeatRoundMultiplier(m);
+  m.heat = calculateMatchHeat(m.tA, m.tB, state, tourPrize, r);
   let res = playMatchEngine(m.tA, m.tB, state, m.isBO5);
   Object.assign(m, res); m.status = 'PLAYED';
   return m;
