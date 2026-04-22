@@ -1256,6 +1256,39 @@ const TournamentPredictTable = ({ tour, state, getRegionBadgeClass }) => {
   );
 };
 
+class LetUsGuessBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch() {}
+  componentDidUpdate(prevProps) {
+    if (this.props.resetKey !== prevProps.resetKey && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="max-w-4xl mx-auto bg-[#060000] border border-[#4d0a0a] rounded-2xl p-6 text-[#ff8a8a]">
+          <div className="text-xl font-black mb-3">LETUSGUESS 页面渲染异常</div>
+          <div className="text-sm mb-4">已触发防白屏保护。请返回主页面后重试。</div>
+          <button
+            onClick={this.props.onExit}
+            className="px-4 py-2 rounded-lg border border-[#8f1414] bg-[#1a0303] hover:bg-[#2a0606] text-[#ffb3b3] font-bold"
+          >
+            返回主页面
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // --- React App Component ---
 export default function App() {
   const [state, setState] = useState(() => {
@@ -1785,6 +1818,7 @@ export default function App() {
 
       <main className="max-w-[1400px] mx-auto">
         {view === 'letusguess' && (
+          <LetUsGuessBoundary onExit={exitLetUsGuess} resetKey={`${guessTab}|${guessFocus ? `${guessFocus.tourId}:${guessFocus.matchId}` : 'none'}`}>
           <div className="relative max-w-6xl mx-auto bg-[#060000] border border-[#4d0a0a] rounded-2xl shadow-[0_0_32px_rgba(120,0,0,0.35)] p-6 space-y-5 text-[#ff6a6a]">
             <button
               onClick={exitLetUsGuess}
@@ -1922,7 +1956,9 @@ export default function App() {
               </div>
             )}
           </div>
-        )}        {view === 'ranking' && (
+          </LetUsGuessBoundary>
+        )}
+        {view === 'ranking' && (
           <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-slate-800 bg-slate-900/80 flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2"><BarChart3 className="text-blue-500" /><h2 className="text-xl font-bold text-slate-100">鍏ㄧ悆 VRS 鎺掕姒?(Top 100)</h2></div>
@@ -1973,7 +2009,6 @@ export default function App() {
             </div>
           </div>
         )}
-
         {view === 'team' && selectedTeam && (
           <div className="max-w-4xl mx-auto space-y-6">
             <div className="bg-slate-900/80 border border-slate-800 p-8 rounded-3xl flex flex-col items-center shadow-2xl">
