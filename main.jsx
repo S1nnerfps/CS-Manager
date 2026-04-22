@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Trophy, Users, Sword, BarChart3, PlusCircle, Calendar, DollarSign, CheckCircle2, ChevronDown, ChevronUp, Check, Shield, History, ArrowDownUp, Clock, ListOrdered, ArrowLeft, ArrowRight, Globe, Sun, Moon } from 'lucide-react';
 
 const MAP_POOL = [
@@ -898,7 +898,7 @@ const UnifiedMatchNode = ({ m }) => {
        <div className="bg-[#0b101a] border-t border-[#1e293b] flex flex-col">
           <button onClick={() => setOpen(!open)} className="w-full py-1.5 flex justify-center items-center gap-1 text-[#475569] hover:text-slate-300 transition-colors">
              {open ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
-            <span className="text-[9px]">展开详情</span>
+            <span className="text-[9px]">灞曞紑璇︽儏</span>
           </button>
           {isPlayed && (
             <div className="px-3 py-1.5 border-t border-[#1e293b]/70 text-[10px] flex justify-between items-center">
@@ -1207,7 +1207,7 @@ const TournamentPredictTable = ({ tour, state, getRegionBadgeClass }) => {
     <div className="bg-slate-900/80 rounded-2xl border border-slate-800 overflow-hidden">
       <div className="p-6 border-b border-slate-800 flex items-center gap-2">
         <Clock className="text-blue-500" />
-        <h2 className="text-xl font-bold text-slate-100">VRS 邀请预测 (VRS Invitation Prediction)</h2>
+        <h2 className="text-xl font-bold text-slate-100">VRS 閭€璇烽娴?(VRS Invitation Prediction)</h2>
       </div>
       {tour.formatId === 'MAJOR' ? (
         <div className="p-4 grid grid-cols-1 xl:grid-cols-3 gap-4">
@@ -1695,6 +1695,12 @@ export default function App() {
     setGuessMsg('');
   };
 
+  const exitLetUsGuess = () => {
+    setGuessFocus(null);
+    setGuessMsg('');
+    const target = (lastMainView && lastMainView !== 'letusguess') ? lastMainView : 'ranking';
+    setView(target);
+  };
   const appRootClass = isDayMode
     ? "day-mode min-h-screen bg-slate-100 text-slate-900 p-4 md:p-8 font-sans"
     : "min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans";
@@ -1720,11 +1726,11 @@ export default function App() {
 
       <nav className={`max-w-[1400px] mx-auto flex flex-wrap items-center justify-between gap-4 mb-8 bg-slate-900/80 p-4 rounded-2xl shadow-xl border border-slate-800`}>
         <div className="flex flex-wrap items-center gap-2 min-w-0">
-          <button onClick={() => setView('ranking')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'ranking' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Globe size={16}/> 榜单</button>
-          <button onClick={() => { setView('organize'); setConfig(prev => ({ ...prev, invDate: addDays(state.currentDate, 1) })); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'organize' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><PlusCircle size={16}/> 办赛</button>
+          <button onClick={() => setView('ranking')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'ranking' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Globe size={16}/> 姒滃崟</button>
+          <button onClick={() => { setView('organize'); setConfig(prev => ({ ...prev, invDate: addDays(state.currentDate, 1) })); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'organize' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><PlusCircle size={16}/> 鍔炶禌</button>
           <button onClick={() => setView('history')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'history' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><ListOrdered size={16}/> 赛事库</button>
-          <button onClick={() => { setView('calendar'); setScheduleDate(state.currentDate); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'calendar' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Calendar size={16}/> 赛事日历</button>
-          {activeTour && <button onClick={() => setView('tournament')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'tournament' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-yellow-500 hover:bg-slate-800'}`}><Sword size={16}/> 现场</button>}
+          <button onClick={() => { setView('calendar'); setScheduleDate(state.currentDate); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'calendar' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Calendar size={16}/> 璧涗簨鏃ュ巻</button>
+          {activeTour && <button onClick={() => setView('tournament')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'tournament' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-yellow-500 hover:bg-slate-800'}`}><Sword size={16}/> 鐜板満</button>}
         </div>
       </nav>
 
@@ -1736,7 +1742,7 @@ export default function App() {
           onClick={handleAdvanceDay}
           className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 px-5 py-2 rounded-lg font-black transition-all shadow-lg hover:shadow-orange-500/30 flex flex-col items-center leading-tight"
         >
-          <span className="flex items-center gap-2">下一天 <Clock size={15}/></span>
+          <span className="flex items-center gap-2">涓嬩竴澶?<Clock size={15}/></span>
           <span className="text-[10px] text-orange-900">Press or Enter '&gt;'</span>
         </button>
         <button
@@ -1766,66 +1772,66 @@ export default function App() {
       </div>
       <button
         onClick={() => {
-          if (view !== 'letusguess') setLastMainView(view);
+          if (view !== 'letusguess') setLastMainView(view || 'ranking');
           setGuessTab('predict');
           setGuessFocus(null);
           setGuessMsg('');
           setView('letusguess');
         }}
-        className="fixed left-4 bottom-4 z-50 border-2 border-red-600 bg-black text-red-500 font-black px-4 py-2 rounded-lg tracking-wide hover:bg-red-950/20 transition"
+        className="fixed left-4 bottom-4 z-50 border-2 border-[#b71c1c] bg-black text-[#ff3b3b] font-black px-4 py-2 rounded-lg tracking-wide hover:bg-[#220000] hover:border-[#ff2d2d] transition shadow-[0_0_18px_rgba(183,28,28,0.45)]"
       >
         LETUSGUESS
       </button>
 
       <main className="max-w-[1400px] mx-auto">
         {view === 'letusguess' && (
-          <div className="max-w-6xl mx-auto bg-black border border-red-700 rounded-2xl shadow-2xl p-6 space-y-5 text-red-500">
+          <div className="relative max-w-6xl mx-auto bg-[#060000] border border-[#4d0a0a] rounded-2xl shadow-[0_0_32px_rgba(120,0,0,0.35)] p-6 space-y-5 text-[#ff6a6a]">
+            <button
+              onClick={exitLetUsGuess}
+              className="fixed left-6 top-6 z-[60] px-4 py-2 rounded-lg border border-[#8f1414] bg-[#1a0303] hover:bg-[#2a0606] text-[#ff8585] font-bold shadow-[0_0_14px_rgba(140,20,20,0.45)]"
+            >
+              返回主页面
+            </button>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-3xl font-black tracking-widest">LETUSGUESS</h2>
-              <button
-                onClick={() => { setGuessFocus(null); setGuessMsg(''); setView(lastMainView || 'ranking'); }}
-                className="px-4 py-2 rounded-lg border border-red-700 bg-red-900/20 hover:bg-red-900/40 text-red-300 font-bold"
-              >
-                返回
-              </button>
+              <h2 className="text-3xl font-black tracking-widest text-[#ff4e4e]">LETUSGUESS</h2>
             </div>
             {!guessFocus && (
               <>
-                <div className="flex items-center gap-2 border border-red-800 p-1 rounded-xl w-fit">
-                  <button onClick={() => setGuessTab('predict')} className={`px-4 py-1.5 rounded-lg font-bold ${guessTab === 'predict' ? 'bg-red-700 text-black' : 'bg-black text-red-300 border border-red-800'}`}>预测</button>
-                  <button onClick={() => setGuessTab('history')} className={`px-4 py-1.5 rounded-lg font-bold ${guessTab === 'history' ? 'bg-red-700 text-black' : 'bg-black text-red-300 border border-red-800'}`}>历史</button>
+                <div className="flex items-center gap-2 border border-[#5f1010] p-1 rounded-xl w-fit bg-[#120202]">
+                  <button onClick={() => setGuessTab('predict')} className={`px-4 py-1.5 rounded-lg font-bold ${guessTab === 'predict' ? 'bg-[#a11414] text-[#ffd2d2]' : 'bg-[#0a0000] text-[#ff8a8a] border border-[#5f1010]'}`}>预测</button>
+                  <button onClick={() => setGuessTab('history')} className={`px-4 py-1.5 rounded-lg font-bold ${guessTab === 'history' ? 'bg-[#a11414] text-[#ffd2d2]' : 'bg-[#0a0000] text-[#ff8a8a] border border-[#5f1010]'}`}>历史</button>
                 </div>
-                <div className="text-xs leading-relaxed text-red-300 bg-[#130606] border border-red-900 rounded-xl p-4">
-                  提示2：返还比例计算公式为：设两支战队的 VRS 积分为 a、b，令 c=min{1000,min(a,b)-1}，p=a-c，q=b-c，k=2pq/(p+q)，m=1.50-ln(p/k)，n=1.50-ln(q/k)，对 m、n 保留两位小数。再令 x=clamp(m,1.00,15.00)，y=clamp(n,1.00,15.00)，分别作为两队返还比例。
+                <div className="text-xs leading-relaxed text-[#ffb7b7] bg-[#130404] border border-[#5d1010] rounded-xl p-4">
+                  提示2：返还比例计算公式为：设两支战队 VRS 为 a、b，令 c=min{1000,min(a,b)-1}，p=a-c，q=b-c，k=2pq/(p+q)，m=1.50-ln(p/k)，n=1.50-ln(q/k)，对 m、n 保留两位小数。再令 x=clamp(m,1.00,15.00)，y=clamp(n,1.00,15.00)，分别作为两队返还比例。
                 </div>
               </>
             )}
             {guessFocus && activeGuessMatch ? (
               <div className="space-y-4">
-                <button onClick={() => { setGuessFocus(null); setGuessMsg(''); }} className="px-3 py-1.5 rounded-lg border border-red-800 text-red-300 hover:bg-red-950/40">返回预测列表</button>
-                <div className="border border-red-800 rounded-xl p-4 bg-[#120707]">
-                  <div className="text-xs text-red-300 mb-2">{activeGuessMatch.tourName} - {activeGuessMatch.name}</div>
+                <button onClick={() => { setGuessFocus(null); setGuessMsg(''); }} className="px-3 py-1.5 rounded-lg border border-[#7a1212] text-[#ff9999] hover:bg-[#260707]">返回预测列表</button>
+                <div className="border border-[#6f1111] rounded-xl p-4 bg-[#120404]">
+                  <div className="text-xs text-[#ffb7b7] mb-2">{activeGuessMatch.tourName} - {activeGuessMatch.name}</div>
                   <div className="max-w-[520px]">
                     <UnifiedMatchNode m={activeGuessMatch} />
                   </div>
                   {activeGuessMatch.tA && activeGuessMatch.tB && (
-                    <div className="mt-2 text-sm text-red-300">
+                    <div className="mt-2 text-sm text-[#ffb3b3]">
                       返还比例：{activeGuessMatch.tA.name} <span className="font-black">{activeGuessMatch.oddsA.toFixed(2)}x</span> / {activeGuessMatch.tB.name} <span className="font-black">{activeGuessMatch.oddsB.toFixed(2)}x</span>
                     </div>
                   )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <button disabled={!activeGuessMatch.tA} onClick={() => setGuessPickTeamId(activeGuessMatch.tA?.id || null)} className={`p-3 rounded-xl border font-bold ${guessPickTeamId === activeGuessMatch.tA?.id ? 'border-red-500 bg-red-700 text-black' : 'border-red-900 bg-black text-red-300'} disabled:opacity-40`}>
+                  <button disabled={!activeGuessMatch.tA} onClick={() => setGuessPickTeamId(activeGuessMatch.tA?.id || null)} className={`p-3 rounded-xl border font-bold ${guessPickTeamId === activeGuessMatch.tA?.id ? 'border-[#cf2d2d] bg-[#9e1717] text-[#ffe8e8]' : 'border-[#651212] bg-[#0b0000] text-[#ffaaaa]'} disabled:opacity-40`}>
                     预测 {activeGuessMatch.tA?.name || 'TBD'} 胜利
                   </button>
-                  <button disabled={!activeGuessMatch.tB} onClick={() => setGuessPickTeamId(activeGuessMatch.tB?.id || null)} className={`p-3 rounded-xl border font-bold ${guessPickTeamId === activeGuessMatch.tB?.id ? 'border-red-500 bg-red-700 text-black' : 'border-red-900 bg-black text-red-300'} disabled:opacity-40`}>
+                  <button disabled={!activeGuessMatch.tB} onClick={() => setGuessPickTeamId(activeGuessMatch.tB?.id || null)} className={`p-3 rounded-xl border font-bold ${guessPickTeamId === activeGuessMatch.tB?.id ? 'border-[#cf2d2d] bg-[#9e1717] text-[#ffe8e8]' : 'border-[#651212] bg-[#0b0000] text-[#ffaaaa]'} disabled:opacity-40`}>
                     预测 {activeGuessMatch.tB?.name || 'TBD'} 胜利
                   </button>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 items-start">
-                  <div className="bg-black border border-red-800 rounded-xl p-4">
-                    <div className="text-xs text-red-300 mb-2">输入金额（仅非负整数）</div>
-                    <div className="bg-[#101010] border border-red-700 rounded-lg px-3 py-2 font-mono text-xl text-green-500 mb-3">${(Number(guessAmountInput || 0)).toLocaleString()}</div>
+                  <div className="bg-[#070000] border border-[#6a1111] rounded-xl p-4">
+                    <div className="text-xs text-[#ffb0b0] mb-2">输入金额（仅非负整数）</div>
+                    <div className="bg-[#100101] border border-[#7f1616] rounded-lg px-3 py-2 font-mono text-xl text-green-500 mb-3">${(Number(guessAmountInput || 0)).toLocaleString()}</div>
                     <div className="grid grid-cols-3 gap-2">
                       {[1,2,3,4,5,6,7,8,9,'C',0,'⌫'].map((k, idx) => (
                         <button
@@ -1836,7 +1842,7 @@ export default function App() {
                             if (k === '⌫') return setGuessAmountInput(v => String(v || '').slice(0, -1));
                             appendGuessDigit(k);
                           }}
-                          className="h-11 rounded-lg border border-red-900 bg-[#130808] text-red-300 font-black hover:bg-red-900/30"
+                          className="h-11 rounded-lg border border-[#6d1313] bg-[#150303] text-[#ffb1b1] font-black hover:bg-[#2a0707]"
                         >
                           {k}
                         </button>
@@ -1844,41 +1850,41 @@ export default function App() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-3">
-                    <div className="text-sm text-red-300">当前资金：<span className="text-green-500 font-black">${(state.funds || 0).toLocaleString()}</span></div>
-                    <button onClick={placeGuess} className="px-5 py-3 rounded-xl bg-red-700 hover:bg-red-600 text-black font-black">
+                    <div className="text-sm text-[#ffb3b3]">当前资金：<span className="text-green-500 font-black">${(state.funds || 0).toLocaleString()}</span></div>
+                    <button onClick={placeGuess} className="px-5 py-3 rounded-xl bg-[#a71a1a] hover:bg-[#c12727] text-[#ffe6e6] font-black">
                       投入资金进行预测
                     </button>
-                    {guessMsg && <div className="text-sm text-red-300">{guessMsg}</div>}
+                    {guessMsg && <div className="text-sm text-[#ffb3b3]">{guessMsg}</div>}
                   </div>
                 </div>
               </div>
             ) : guessTab === 'predict' ? (
               <div className="space-y-4">
-                <div className="text-sm text-red-300">预测板块：展示 {guessDate} 的全部赛程。</div>
+                <div className="text-sm text-[#ffb6b6]">预测板块：展示 {guessDate} 的全部赛程。</div>
                 {guessMatches.length === 0 ? (
-                  <div className="border border-red-900 bg-[#100707] rounded-xl p-6 text-center text-red-300">下一天暂无比赛。</div>
+                  <div className="border border-[#6b1212] bg-[#130303] rounded-xl p-6 text-center text-[#ffb3b3]">下一天暂无比赛。</div>
                 ) : (
                   guessMatches.map((m, idx) => (
-                    <div key={`${m.tourId}:${m.matchId}:${idx}`} className="border border-red-900 bg-[#100707] rounded-xl p-3 flex flex-col lg:flex-row gap-4 items-start">
+                    <div key={`${m.tourId}:${m.matchId}:${idx}`} className="border border-[#6b1212] bg-[#130303] rounded-xl p-3 flex flex-col lg:flex-row gap-4 items-start">
                       <div className="w-full lg:w-[360px]"><UnifiedMatchNode m={m} /></div>
                       <div className="flex-1 space-y-2">
-                        <div className="text-sm text-red-200 font-bold">{m.tourName} - {m.name}</div>
+                        <div className="text-sm text-[#ffd1d1] font-bold">{m.tourName} - {m.name}</div>
                         {m.tA && m.tB ? (
-                          <div className="text-sm text-red-300">
+                          <div className="text-sm text-[#ffb3b3]">
                             返还比例：{m.tA.name} <span className="font-black">{m.oddsA.toFixed(2)}x</span> / {m.tB.name} <span className="font-black">{m.oddsB.toFixed(2)}x</span>
                           </div>
                         ) : (
-                          <div className="text-sm text-red-300">返还比例：待定（TBD vs TBD）</div>
+                          <div className="text-sm text-[#ffb3b3]">返还比例：待定（TBD vs TBD）</div>
                         )}
                         {m.prediction ? (
-                          <div className="text-sm">
+                          <div className="text-sm text-[#ffcdcd]">
                             您预测 {m.prediction.pickTeamName} 胜利。已投入预测资金：<span className="text-green-500 font-black">{m.prediction.amount}$</span>
                           </div>
                         ) : (
                           <button
                             disabled={!m.tA || !m.tB}
                             onClick={() => openGuessMatch(m)}
-                            className="px-4 py-2 rounded-lg border border-red-700 bg-red-900/20 hover:bg-red-900/40 text-red-300 font-bold disabled:opacity-40"
+                            className="px-4 py-2 rounded-lg border border-[#7e1717] bg-[#2a0707] hover:bg-[#401010] text-[#ffb0b0] font-bold disabled:opacity-40"
                           >
                             预测本场比赛
                           </button>
@@ -1890,19 +1896,19 @@ export default function App() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="text-sm text-red-300">历史板块：从新到旧展示你的预测记录。</div>
+                <div className="text-sm text-[#ffb6b6]">历史板块：从新到旧展示你的预测记录。</div>
                 {(state.guessHistory || []).length === 0 ? (
-                  <div className="border border-red-900 bg-[#100707] rounded-xl p-6 text-center text-red-300">暂无预测历史。</div>
+                  <div className="border border-[#6b1212] bg-[#130303] rounded-xl p-6 text-center text-[#ffb3b3]">暂无预测历史。</div>
                 ) : (
                   (state.guessHistory || []).map((g, idx) => {
                     const t = state.tournaments.find(tt => tt.id === g.tourId);
                     const st = t?.stages?.[g.stageIdx];
                     const m = st?.nodes?.find(n => n.id === g.matchId);
                     return (
-                      <div key={`${g.id}:${idx}`} className="border border-red-900 bg-[#100707] rounded-xl p-3 flex flex-col lg:flex-row gap-4 items-start">
-                        <div className="w-full lg:w-[360px]">{m ? <UnifiedMatchNode m={m} /> : <div className="text-xs text-red-300 p-3">比赛卡片不可用</div>}</div>
-                        <div className="flex-1 text-sm space-y-1">
-                          <div className="font-bold text-red-200">{g.tourName} - {g.matchName}</div>
+                      <div key={`${g.id}:${idx}`} className="border border-[#6b1212] bg-[#130303] rounded-xl p-3 flex flex-col lg:flex-row gap-4 items-start">
+                        <div className="w-full lg:w-[360px]">{m ? <UnifiedMatchNode m={m} /> : <div className="text-xs text-[#ffb3b3] p-3">比赛卡片不可用</div>}</div>
+                        <div className="flex-1 text-sm space-y-1 text-[#ffd3d3]">
+                          <div className="font-bold text-[#ffdede]">{g.tourName} - {g.matchName}</div>
                           <div>预测胜者：<span className="font-black">{g.pickTeamName}</span></div>
                           <div>投入资金：<span className="text-green-500 font-black">{g.amount}$</span></div>
                           <div>返还比例：{g.teamAName} {Number(g.oddsA || 1).toFixed(2)}x / {g.teamBName} {Number(g.oddsB || 1).toFixed(2)}x</div>
@@ -1916,11 +1922,10 @@ export default function App() {
               </div>
             )}
           </div>
-        )}
-        {view === 'ranking' && (
+        )}        {view === 'ranking' && (
           <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-slate-800 bg-slate-900/80 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-2"><BarChart3 className="text-blue-500" /><h2 className="text-xl font-bold text-slate-100">全球 VRS 排行榜 (Top 100)</h2></div>
+              <div className="flex items-center gap-2"><BarChart3 className="text-blue-500" /><h2 className="text-xl font-bold text-slate-100">鍏ㄧ悆 VRS 鎺掕姒?(Top 100)</h2></div>
               <div className="flex flex-col sm:flex-row items-center gap-2">
                  <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-1">
                   {['Global', 'EU', 'AM', 'AS'].map(r => (
@@ -1930,7 +1935,7 @@ export default function App() {
                   ))}
                  </div>
                  <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-1">
-                  <button onClick={() => setSortMode('VRS')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'VRS' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'}`}>按 VRS</button>
+                  <button onClick={() => setSortMode('VRS')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'VRS' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'}`}>鎸?VRS</button>
                    <button onClick={() => setSortMode('PRIZE')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'PRIZE' ? 'bg-green-600 text-white' : 'text-slate-400 hover:text-white'}`}>按赏金</button>
                  </div>
               </div>
@@ -1938,7 +1943,7 @@ export default function App() {
             <div className={`overflow-x-auto max-h-[75vh] ${SCROLLBAR}`}>
               <table className="w-full text-left">
                 <thead className="bg-slate-900 text-slate-500 text-xs uppercase sticky top-0 z-10 shadow-md">
-                  <tr><th className="px-6 py-4">Rank</th><th className="px-6 py-4 text-center">Region</th><th className="px-6 py-4">Team</th><th className="px-6 py-4"><div className="flex items-center gap-1">VRS Points {sortMode === 'VRS' && <ArrowDownUp size={12}/>}</div></th><th className="px-6 py-4 text-center">接受邀请成功率</th><th className="px-6 py-4 text-right"><div className="flex items-center justify-end gap-1">Career Earnings {sortMode === 'PRIZE' && <ArrowDownUp size={12}/>}</div></th></tr>
+                  <tr><th className="px-6 py-4">Rank</th><th className="px-6 py-4 text-center">Region</th><th className="px-6 py-4">Team</th><th className="px-6 py-4"><div className="flex items-center gap-1">VRS Points {sortMode === 'VRS' && <ArrowDownUp size={12}/>}</div></th><th className="px-6 py-4 text-center">鎺ュ彈閭€璇锋垚鍔熺巼</th><th className="px-6 py-4 text-right"><div className="flex items-center justify-end gap-1">Career Earnings {sortMode === 'PRIZE' && <ArrowDownUp size={12}/>}</div></th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
                   {displayTeams.map((team) => (
@@ -1990,8 +1995,8 @@ export default function App() {
             </div>
             
             <div className="bg-slate-900/80 border border-slate-800 p-8 rounded-3xl shadow-xl">
-               <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-100"><Trophy className="text-yellow-500"/> 历史荣誉记录 (Historical Honors)</h3>
-               {(!selectedTeam.honors || selectedTeam.honors.length === 0) ? <div className="text-slate-500 text-center py-12 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">暂无历史荣誉</div> :
+               <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-100"><Trophy className="text-yellow-500"/> 鍘嗗彶鑽ｈ獕璁板綍 (Historical Honors)</h3>
+               {(!selectedTeam.honors || selectedTeam.honors.length === 0) ? <div className="text-slate-500 text-center py-12 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">鏆傛棤鍘嗗彶鑽ｈ獕</div> :
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    {selectedTeam.honors.map((h, i) => {
                      const c = getHonorColor(h.tier, h.placement);
@@ -2008,12 +2013,12 @@ export default function App() {
             </div>
 
             <div className="bg-slate-900/80 border border-slate-800 p-8 rounded-3xl shadow-xl mt-6">
-                <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-100"><ListOrdered className="text-blue-500"/> 赛事记录 (Tournament History)</h3>
-                {teamTournaments.length === 0 ? <div className="text-slate-500 text-center py-12 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">暂无赛事记录</div> :
+                <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-100"><ListOrdered className="text-blue-500"/> 璧涗簨璁板綍 (Tournament History)</h3>
+                {teamTournaments.length === 0 ? <div className="text-slate-500 text-center py-12 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">鏆傛棤璧涗簨璁板綍</div> :
                 <div className={`overflow-x-auto ${SCROLLBAR}`}>
                     <table className="w-full text-left text-sm">
                     <thead className="bg-slate-950 text-slate-400 uppercase text-xs">
-                        <tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Tournament</th><th className="px-4 py-3">Placement</th><th className="px-4 py-3 text-right">Prize</th><th className="px-4 py-3 text-right">Δ VRS</th></tr>
+                        <tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Tournament</th><th className="px-4 py-3">Placement</th><th className="px-4 py-3 text-right">Prize</th><th className="px-4 py-3 text-right">螖 VRS</th></tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/50">
                         {teamTournaments.map(tt => {
@@ -2042,7 +2047,7 @@ export default function App() {
         {view === 'calendar' && (
           <div className="max-w-4xl mx-auto bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
             <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
-              <h2 className="text-2xl font-black flex items-center gap-2 text-slate-100"><Calendar className="text-blue-500"/> 赛事日历</h2>
+              <h2 className="text-2xl font-black flex items-center gap-2 text-slate-100"><Calendar className="text-blue-500"/> 璧涗簨鏃ュ巻</h2>
               <div className="flex items-center gap-2">
                  <button onClick={() => changeScheduleDate(-1)} className="bg-slate-800 p-2 rounded hover:bg-slate-700 transition"><ArrowLeft size={16}/></button>
                  <div className="flex items-center gap-1 bg-slate-950 border border-slate-700 rounded-lg px-2">
@@ -2056,7 +2061,7 @@ export default function App() {
             </div>
             <div className="mb-6 flex items-center gap-2 text-sm text-slate-300">
               <input id="track-today" type="checkbox" checked={trackCalendarToday} onChange={e => setTrackCalendarToday(e.target.checked)} className="accent-blue-500" />
-              <label htmlFor="track-today" className="cursor-pointer">跟踪当天（勾选后在本界面点击“下一天”会自动跳转到当天）</label>
+              <label htmlFor="track-today" className="cursor-pointer">璺熻釜褰撳ぉ锛堝嬀閫夊悗鍦ㄦ湰鐣岄潰鐐瑰嚮鈥滀笅涓€澶┾€濅細鑷姩璺宠浆鍒板綋澶╋級</label>
             </div>
             <div className="space-y-4">
               {scheduledMatchesForDay.length === 0 ? <div className="text-center py-12 text-slate-500 bg-slate-950/50 rounded-xl border border-dashed border-slate-800">当天暂无已排期比赛</div> :
@@ -2083,7 +2088,7 @@ export default function App() {
             </div>
 
             {Object.keys(groupedHistory).length === 0 ? (
-              <div className="p-12 text-center text-slate-500 bg-slate-900/50 rounded-2xl border border-slate-800 shadow-inner">暂无赛事历史记录</div>
+              <div className="p-12 text-center text-slate-500 bg-slate-900/50 rounded-2xl border border-slate-800 shadow-inner">鏆傛棤璧涗簨鍘嗗彶璁板綍</div>
             ) : (
               orderedHistoryFormats.map((formatId) => {
                 const formatGroup = groupedHistory[formatId];
@@ -2126,10 +2131,10 @@ export default function App() {
 
         {view === 'organize' && (
           <div className="max-w-2xl mx-auto bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
-            <h2 className="text-3xl font-black mb-8 flex items-center gap-3 text-slate-100"><span className="bg-blue-500/20 text-blue-500 p-2 rounded-xl"><Calendar /></span> 创建赛事</h2>
+            <h2 className="text-3xl font-black mb-8 flex items-center gap-3 text-slate-100"><span className="bg-blue-500/20 text-blue-500 p-2 rounded-xl"><Calendar /></span> 鍒涘缓璧涗簨</h2>
             <div className="space-y-6">
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">1. 基础赛制</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">1. 鍩虹璧涘埗</label>
                 <div className="grid grid-cols-2 gap-2">
                   {Object.values(FORMATS).map(f => (
                     <div key={f.id} onClick={() => handleFormatChange(f.id)} className={`p-3 rounded-xl border cursor-pointer font-bold transition-all text-center ${config.format === f.id ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-500'}`}>{f.name}</div>
@@ -2137,7 +2142,7 @@ export default function App() {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">2. 赛事档次 (Tiers)</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">2. 璧涗簨妗ｆ (Tiers)</label>
                 <div className="grid grid-cols-3 gap-2">
                   {FORMATS[config.format].allowedTiers.map(tId => (
                     <div key={tId} onClick={() => setConfig({...config, tier: tId})} className={`p-3 rounded-xl border cursor-pointer transition-all text-center ${config.tier === tId ? 'border-orange-500 bg-orange-500/10 text-orange-400' : 'border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-500'}`}>
@@ -2157,7 +2162,7 @@ export default function App() {
               </div>
               {['MAJOR', 'IEM', 'BLAST'].includes(config.format) && (
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">4. 举办城市</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">4. 涓惧姙鍩庡競</label>
                   <input
                     type="text"
                     value={citySearch}
@@ -2186,12 +2191,12 @@ export default function App() {
                     )}
                   </div>
                   <div className="mt-2 text-xs text-slate-500">
-                    已选择: <span className="text-slate-300 font-semibold">{config.nameInput || '未选择'}</span>
+                    宸查€夋嫨: <span className="text-slate-300 font-semibold">{config.nameInput || '鏈€夋嫨'}</span>
                   </div>
                 </div>
               )}
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center mt-4">
-                 <div><div className="text-[10px] text-slate-500 uppercase font-bold mb-1">总奖金额</div><div className="text-2xl font-mono font-black text-green-500">${calculatePrize(config.format, config.tier).toLocaleString()}</div></div>
+                 <div><div className="text-[10px] text-slate-500 uppercase font-bold mb-1">鎬诲閲戦</div><div className="text-2xl font-mono font-black text-green-500">${calculatePrize(config.format, config.tier).toLocaleString()}</div></div>
                  <DollarSign size={32} className="text-slate-800" />
               </div>
               {errorMsg && <div className="bg-red-500/10 border border-red-500/50 text-red-500 px-4 py-2 rounded-lg text-sm font-bold">{errorMsg}</div>}
@@ -2236,7 +2241,7 @@ export default function App() {
             {activeStageIdx === 'standings' ? (
               activeTour.status === 'COMPLETED' ? (
                 <TournamentStandingsTable standings={activeTour.standings} onTeamClick={(t) => {setSelectedTeamId(t.id); setView('team');}} isDayMode={isDayMode} />
-              ) : activeTour.stages?.[0] ? <StageViewer stage={activeTour.stages[0]} /> : <div className="text-center p-12 text-slate-500">暂无可展示的赛程数据</div>
+              ) : activeTour.stages?.[0] ? <StageViewer stage={activeTour.stages[0]} /> : <div className="text-center p-12 text-slate-500">鏆傛棤鍙睍绀虹殑璧涚▼鏁版嵁</div>
             ) : activeStageIdx === 'participants' ? (
               <TournamentParticipantsTable participants={activeTour.participants} onTeamClick={(t) => {setSelectedTeamId(t.id); setView('team');}} getRegionBadgeClass={getRegionBadgeClass} globalRankByTeamId={globalRankByTeamId} />
             ) : activeStageIdx !== 'standings' && activeStageIdx !== 'participants' && activeTour.stages[activeStageIdx] ? (
@@ -2248,3 +2253,4 @@ export default function App() {
     </div>
   );
 }
+
