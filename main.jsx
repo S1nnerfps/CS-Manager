@@ -1289,6 +1289,29 @@ class LetUsGuessBoundary extends React.Component {
   }
 }
 
+const GuessMatchPreview = ({ m }) => {
+  const isPlayed = m?.status === 'PLAYED';
+  const aWin = isPlayed && m?.winner?.id === m?.tA?.id;
+  const bWin = isPlayed && m?.winner?.id === m?.tB?.id;
+  const tAName = m?.tA?.name || 'TBD';
+  const tBName = m?.tB?.name || 'TBD';
+  const scoreA = isPlayed ? (m?.scoreA ?? '-') : 'BO3';
+  const scoreB = isPlayed ? (m?.scoreB ?? '-') : '-';
+  return (
+    <div className="w-full rounded-xl border border-[#6b1212] bg-[#0e0202] p-3">
+      <div className="text-[10px] text-[#ff9a9a] mb-2 font-mono">{m?.date || 'TBD'} · {m?.name || 'Match'}</div>
+      <div className={`flex items-center justify-between px-2 py-2 rounded ${aWin ? 'bg-green-900/30' : isPlayed ? 'bg-red-950/30' : 'bg-[#140404]'}`}>
+        <span className="truncate">{tAName}</span>
+        <span className={`${aWin ? 'text-green-400' : 'text-[#ffb2b2]'} font-black`}>{scoreA}</span>
+      </div>
+      <div className={`flex items-center justify-between px-2 py-2 rounded mt-1 ${bWin ? 'bg-green-900/30' : isPlayed ? 'bg-red-950/30' : 'bg-[#140404]'}`}>
+        <span className="truncate">{tBName}</span>
+        <span className={`${bWin ? 'text-green-400' : 'text-[#ffb2b2]'} font-black`}>{scoreB}</span>
+      </div>
+    </div>
+  );
+};
+
 // --- React App Component ---
 export default function App() {
   const [state, setState] = useState(() => {
@@ -1759,11 +1782,11 @@ export default function App() {
 
       <nav className={`max-w-[1400px] mx-auto flex flex-wrap items-center justify-between gap-4 mb-8 bg-slate-900/80 p-4 rounded-2xl shadow-xl border border-slate-800`}>
         <div className="flex flex-wrap items-center gap-2 min-w-0">
-          <button onClick={() => setView('ranking')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'ranking' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Globe size={16}/> 姒滃崟</button>
-          <button onClick={() => { setView('organize'); setConfig(prev => ({ ...prev, invDate: addDays(state.currentDate, 1) })); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'organize' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><PlusCircle size={16}/> 鍔炶禌</button>
+          <button onClick={() => setView('ranking')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'ranking' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Globe size={16}/> 榜单</button>
+          <button onClick={() => { setView('organize'); setConfig(prev => ({ ...prev, invDate: addDays(state.currentDate, 1) })); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'organize' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><PlusCircle size={16}/> 办赛</button>
           <button onClick={() => setView('history')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'history' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><ListOrdered size={16}/> 赛事库</button>
-          <button onClick={() => { setView('calendar'); setScheduleDate(state.currentDate); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'calendar' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Calendar size={16}/> 璧涗簨鏃ュ巻</button>
-          {activeTour && <button onClick={() => setView('tournament')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'tournament' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-yellow-500 hover:bg-slate-800'}`}><Sword size={16}/> 鐜板満</button>}
+          <button onClick={() => { setView('calendar'); setScheduleDate(state.currentDate); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'calendar' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Calendar size={16}/> 赛事日历</button>
+          {activeTour && <button onClick={() => setView('tournament')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'tournament' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-yellow-500 hover:bg-slate-800'}`}><Sword size={16}/> 现场</button>}
         </div>
       </nav>
 
@@ -1819,7 +1842,8 @@ export default function App() {
       <main className="max-w-[1400px] mx-auto">
         {view === 'letusguess' && (() => { try { return (
           <LetUsGuessBoundary onExit={exitLetUsGuess} resetKey={`${guessTab}|${guessFocus ? `${guessFocus.tourId}:${guessFocus.matchId}` : 'none'}`}>
-          <div className="relative max-w-6xl mx-auto bg-[#060000] border border-[#4d0a0a] rounded-2xl shadow-[0_0_32px_rgba(120,0,0,0.35)] p-6 space-y-5 text-[#ff6a6a]">
+          <div className="fixed inset-0 z-[70] overflow-auto p-6 md:p-10 bg-[radial-gradient(circle_at_20%_20%,#2a0505_0%,#080000_45%,#020000_100%)]">
+          <div className="relative max-w-6xl mx-auto border border-[#4d0a0a] rounded-2xl shadow-[0_0_42px_rgba(120,0,0,0.45)] p-6 space-y-5 text-[#ff6a6a] bg-[#060000]/95">
             <button
               onClick={exitLetUsGuess}
               className="fixed left-6 top-6 z-[60] px-4 py-2 rounded-lg border border-[#8f1414] bg-[#1a0303] hover:bg-[#2a0606] text-[#ff8585] font-bold shadow-[0_0_14px_rgba(140,20,20,0.45)]"
@@ -1846,7 +1870,7 @@ export default function App() {
                 <div className="border border-[#6f1111] rounded-xl p-4 bg-[#120404]">
                   <div className="text-xs text-[#ffb7b7] mb-2">{activeGuessMatch.tourName} - {activeGuessMatch.name}</div>
                   <div className="max-w-[520px]">
-                    <UnifiedMatchNode m={activeGuessMatch} />
+                    <GuessMatchPreview m={activeGuessMatch} />
                   </div>
                   {activeGuessMatch.tA && activeGuessMatch.tB && (
                     <div className="mt-2 text-sm text-[#ffb3b3]">
@@ -1900,7 +1924,7 @@ export default function App() {
                 ) : (
                   guessMatches.map((m, idx) => (
                     <div key={`${m.tourId}:${m.matchId}:${idx}`} className="border border-[#6b1212] bg-[#130303] rounded-xl p-3 flex flex-col lg:flex-row gap-4 items-start">
-                      <div className="w-full lg:w-[360px]"><UnifiedMatchNode m={m} /></div>
+                      <div className="w-full lg:w-[360px]"><GuessMatchPreview m={m} /></div>
                       <div className="flex-1 space-y-2">
                         <div className="text-sm text-[#ffd1d1] font-bold">{m.tourName} - {m.name}</div>
                         {m.tA && m.tB ? (
@@ -1940,7 +1964,7 @@ export default function App() {
                     const m = st?.nodes?.find(n => n.id === g.matchId);
                     return (
                       <div key={`${g.id}:${idx}`} className="border border-[#6b1212] bg-[#130303] rounded-xl p-3 flex flex-col lg:flex-row gap-4 items-start">
-                        <div className="w-full lg:w-[360px]">{m ? <UnifiedMatchNode m={m} /> : <div className="text-xs text-[#ffb3b3] p-3">比赛卡片不可用</div>}</div>
+                        <div className="w-full lg:w-[360px]">{m ? <GuessMatchPreview m={m} /> : <div className="text-xs text-[#ffb3b3] p-3">比赛卡片不可用</div>}</div>
                         <div className="flex-1 text-sm space-y-1 text-[#ffd3d3]">
                           <div className="font-bold text-[#ffdede]">{g.tourName} - {g.matchName}</div>
                           <div>预测胜者：<span className="font-black">{g.pickTeamName}</span></div>
@@ -1955,6 +1979,7 @@ export default function App() {
                 )}
               </div>
             )}
+          </div>
           </div>
           </LetUsGuessBoundary>
         ); } catch (e) { return (
