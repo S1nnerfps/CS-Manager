@@ -1860,7 +1860,7 @@ export default function App() {
                   <button onClick={() => setGuessTab('history')} className={`px-4 py-1.5 rounded-lg font-bold ${guessTab === 'history' ? 'bg-[#a11414] text-[#ffd2d2]' : 'bg-[#0a0000] text-[#ff8a8a] border border-[#5f1010]'}`}>历史</button>
                 </div>
                 <div className="text-xs leading-relaxed text-[#ffb7b7] bg-[#130404] border border-[#5d1010] rounded-xl p-4">
-                  提示2：返还比例计算公式为：设两支战队 VRS 为 a、b，令 c=min{1000,min(a,b)-1}，p=a-c，q=b-c，k=2pq/(p+q)，m=1.50-ln(p/k)，n=1.50-ln(q/k)，对 m、n 保留两位小数。再令 x=clamp(m,1.00,15.00)，y=clamp(n,1.00,15.00)，分别作为两队返还比例。
+                  提示2：返还比例计算公式为：设两支战队 VRS 为 a、b。令 c=min(1000, min(a,b)-1)，p=a-c，q=b-c，k=2pq/(p+q)，m=1.50-ln(p/k)，n=1.50-ln(q/k)，对 m、n 保留两位小数。再令 x=clamp(m,1.00,15.00)，y=clamp(n,1.00,15.00)，分别作为两队返还比例。
                 </div>
               </>
             )}
@@ -1997,7 +1997,7 @@ export default function App() {
         {view === 'ranking' && (
           <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-slate-800 bg-slate-900/80 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-2"><BarChart3 className="text-blue-500" /><h2 className="text-xl font-bold text-slate-100">鍏ㄧ悆 VRS 鎺掕姒?(Top 100)</h2></div>
+              <div className="flex items-center gap-2"><BarChart3 className="text-blue-500" /><h2 className="text-xl font-bold text-slate-100">全球 VRS 排行榜 (Top 100)</h2></div>
               <div className="flex flex-col sm:flex-row items-center gap-2">
                  <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-1">
                   {['Global', 'EU', 'AM', 'AS'].map(r => (
@@ -2007,7 +2007,7 @@ export default function App() {
                   ))}
                  </div>
                  <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-1">
-                  <button onClick={() => setSortMode('VRS')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'VRS' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'}`}>鎸?VRS</button>
+                  <button onClick={() => setSortMode('VRS')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'VRS' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'}`}>按 VRS</button>
                    <button onClick={() => setSortMode('PRIZE')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'PRIZE' ? 'bg-green-600 text-white' : 'text-slate-400 hover:text-white'}`}>按赏金</button>
                  </div>
               </div>
@@ -2015,7 +2015,7 @@ export default function App() {
             <div className={`overflow-x-auto max-h-[75vh] ${SCROLLBAR}`}>
               <table className="w-full text-left">
                 <thead className="bg-slate-900 text-slate-500 text-xs uppercase sticky top-0 z-10 shadow-md">
-                  <tr><th className="px-6 py-4">Rank</th><th className="px-6 py-4 text-center">Region</th><th className="px-6 py-4">Team</th><th className="px-6 py-4"><div className="flex items-center gap-1">VRS Points {sortMode === 'VRS' && <ArrowDownUp size={12}/>}</div></th><th className="px-6 py-4 text-center">鎺ュ彈閭€璇锋垚鍔熺巼</th><th className="px-6 py-4 text-right"><div className="flex items-center justify-end gap-1">Career Earnings {sortMode === 'PRIZE' && <ArrowDownUp size={12}/>}</div></th></tr>
+                  <tr><th className="px-6 py-4">Rank</th><th className="px-6 py-4 text-center">Region</th><th className="px-6 py-4">Team</th><th className="px-6 py-4"><div className="flex items-center gap-1">VRS Points {sortMode === 'VRS' && <ArrowDownUp size={12}/>}</div></th><th className="px-6 py-4 text-center">接受邀请成功率</th><th className="px-6 py-4 text-right"><div className="flex items-center justify-end gap-1">Career Earnings {sortMode === 'PRIZE' && <ArrowDownUp size={12}/>}</div></th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
                   {displayTeams.map((team) => (
