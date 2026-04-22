@@ -1817,7 +1817,7 @@ export default function App() {
       </button>
 
       <main className="max-w-[1400px] mx-auto">
-        {view === 'letusguess' && (
+        {view === 'letusguess' && (() => { try { return (
           <LetUsGuessBoundary onExit={exitLetUsGuess} resetKey={`${guessTab}|${guessFocus ? `${guessFocus.tourId}:${guessFocus.matchId}` : 'none'}`}>
           <div className="relative max-w-6xl mx-auto bg-[#060000] border border-[#4d0a0a] rounded-2xl shadow-[0_0_32px_rgba(120,0,0,0.35)] p-6 space-y-5 text-[#ff6a6a]">
             <button
@@ -1957,7 +1957,18 @@ export default function App() {
             )}
           </div>
           </LetUsGuessBoundary>
-        )}
+        ); } catch (e) { return (
+          <div className="max-w-4xl mx-auto bg-[#060000] border border-[#4d0a0a] rounded-2xl p-6 text-[#ff8a8a]">
+            <div className="text-xl font-black mb-3">LETUSGUESS 页面渲染异常</div>
+            <div className="text-sm mb-4">已触发兜底保护。请先返回主页面再重试。</div>
+            <button
+              onClick={exitLetUsGuess}
+              className="px-4 py-2 rounded-lg border border-[#8f1414] bg-[#1a0303] hover:bg-[#2a0606] text-[#ffb3b3] font-bold"
+            >
+              返回主页面
+            </button>
+          </div>
+        ); } })()}
         {view === 'ranking' && (
           <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-slate-800 bg-slate-900/80 flex flex-col md:flex-row items-center justify-between gap-4">
