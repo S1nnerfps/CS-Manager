@@ -117,6 +117,26 @@ const TEAM_LABEL_DISPLAY = {
 
 const calculatePrize = (formatId, tierId) => Math.round((FORMATS[formatId]?.basePrize || 0) * (TOURNAMENT_TIERS[tierId]?.multiplier || 0));
 
+const clamp = (v, minV, maxV) => Math.min(maxV, Math.max(minV, v));
+const round2 = (v) => Math.round(v * 100) / 100;
+
+const calculateGuessRatios = (teamA, teamB, vrsMap) => {
+  const a = Math.max(1, Number(vrsMap?.[teamA?.id] || 1000));
+  const b = Math.max(1, Number(vrsMap?.[teamB?.id] || 1000));
+  const c = Math.min(1000, Math.min(a, b) - 1);
+  const p = Math.max(1e-6, a - c);
+  const q = Math.max(1e-6, b - c);
+  const k = (2 * p * q) / Math.max(1e-6, p + q);
+  const m = round2(1.5 - Math.log(p / k));
+  const n = round2(1.5 - Math.log(q / k));
+  const x = clamp(m, 1.0, 15.0);
+  const y = clamp(n, 1.0, 15.0);
+  return {
+    ratioA: x,
+    ratioB: y
+  };
+};
+
 const buildTeamRankMap = (state) => {
   const ordered = [...state.teams].sort((a, b) => (state.vrsMap[b.id] || 0) - (state.vrsMap[a.id] || 0));
   const rankMap = {};
@@ -149,9 +169,9 @@ const calculateMatchHeat = (teamA, teamB, state, prize, r = 1) => {
   const strongCount = Number(idA.isStrongTeam) + Number(idB.isStrongTeam);
   const starCount = Number(idA.isStarTeam) + Number(idB.isStarTeam);
 
-  for (let i = 0; i < topCount; i++) k *= 5;
-  for (let i = 0; i < strongCount; i++) k *= 1.5;
-  for (let i = 0; i < starCount; i++) k *= 8;
+  for (let i = 0; i < topCount; i++) k *= 6;
+  for (let i = 0; i < strongCount; i++) k *= 2.5;
+  for (let i = 0; i < starCount; i++) k *= 9.87;
 
   const heat = Math.round(Math.sqrt(g * k * (Number(r) > 0 ? Number(r) : 1)));
   return Math.max(0, heat);
@@ -675,6 +695,18 @@ const processDayTick = (tour, state, dateStr) => {
       if (m.loserTo) { let tn = stg.nodes.find(n=>n.id===m.loserTo.id); if(tn) { tn[m.loserTo.slot] = {...m.loser}; } }
       if (!m.winnerTo && !m.loserTo) { tour.placements.push({ team: m.winner, tag: '1st', vrsBefore: state.vrsMap[m.winner.id] || 1000 }); }
       if (m.loserTag) { tour.placements.push({ team: m.loser, tag: m.loserTag, vrsBefore: state.vrsMap[m.loser.id] || 1000 }); }
+    }
+
+    if (m.prediction && !m.prediction.settled) {
+      const success = m.prediction.pickTeamId === m.winner?.id;
+      const payout = success ? Math.round((m.prediction.amount || 0) * (m.prediction.chosenOdds || 0)) : 0;
+      state.funds = (state.funds || 0) + payout;
+      m.prediction = { ...m.prediction, settled: true, success, payout, settleDate: dateStr, winnerName: m.winner?.name || '' };
+      if (!Array.isArray(state.guessHistory)) state.guessHistory = [];
+      state.guessHistory = state.guessHistory.map(item => {
+        if (item.id !== m.prediction.guessId) return item;
+        return { ...item, status: 'SETTLED', success, payout, settleDate: dateStr, winnerName: m.winner?.name || '' };
+      });
     }
     
     if(!state.matchLog[dateStr]) state.matchLog[dateStr] = []; 
@@ -1236,6 +1268,7 @@ export default function App() {
       currentDate: '2026-01-01',
       teams: t, vrsMap: vMap, staminaMap: sMap,
       tournaments: [], matchLog: {}, nextTournamentId: 1,
+      guessHistory: [],
       funds: 10000000,
       majorSlots: createDefaultMajorSlots(),
       eplCounters: { HIGHEST:1, TIER_S:1, TIER_1:1, TIER_2:1, TIER_3:1, TIER_OPEN:1, EWC:1 }
@@ -1255,6 +1288,12 @@ export default function App() {
   const [trackCalendarToday, setTrackCalendarToday] = useState(true);
   const [citySearch, setCitySearch] = useState('');
   const [isDayMode, setIsDayMode] = useState(false);
+  const [guessTab, setGuessTab] = useState('predict');
+  const [guessFocus, setGuessFocus] = useState(null);
+  const [guessAmountInput, setGuessAmountInput] = useState('');
+  const [guessPickTeamId, setGuessPickTeamId] = useState(null);
+  const [guessMsg, setGuessMsg] = useState('');
+  const [lastMainView, setLastMainView] = useState('ranking');
   const organizeDateInputRef = useRef(null);
   const scheduleDateInputRef = useRef(null);
 
@@ -1526,6 +1565,136 @@ export default function App() {
     return all.sort((a,b) => String(a.tourName).localeCompare(String(b.tourName)) || String(a.name).localeCompare(String(b.name)));
   }, [state.tournaments, scheduleDate]);
 
+  const guessDate = useMemo(() => addDays(state.currentDate, 1), [state.currentDate]);
+
+  const guessMatches = useMemo(() => {
+    const all = [];
+    state.tournaments.forEach(t => {
+      t.stages.forEach((st, stageIdx) => {
+        (st.nodes || []).forEach(m => {
+          if (m.date === guessDate) {
+            const odds = (m.tA && m.tB) ? calculateGuessRatios(m.tA, m.tB, state.vrsMap) : { ratioA: 1, ratioB: 1 };
+            all.push({
+              tourId: t.id,
+              stageIdx,
+              matchId: m.id,
+              tourName: t.name,
+              ...m,
+              oddsA: odds.ratioA,
+              oddsB: odds.ratioB
+            });
+          }
+        });
+      });
+    });
+    return all.sort((a, b) => String(a.tourName).localeCompare(String(b.tourName)) || String(a.name).localeCompare(String(b.name)));
+  }, [state.tournaments, state.vrsMap, guessDate]);
+
+  const activeGuessMatch = useMemo(() => {
+    if (!guessFocus) return null;
+    const tour = state.tournaments.find(t => t.id === guessFocus.tourId);
+    const st = tour?.stages?.[guessFocus.stageIdx];
+    const m = st?.nodes?.find(n => n.id === guessFocus.matchId);
+    if (!m) return null;
+    const odds = (m.tA && m.tB) ? calculateGuessRatios(m.tA, m.tB, state.vrsMap) : { ratioA: 1, ratioB: 1 };
+    return { ...m, tourId: tour.id, stageIdx: guessFocus.stageIdx, matchId: m.id, tourName: tour.name, oddsA: odds.ratioA, oddsB: odds.ratioB };
+  }, [guessFocus, state.tournaments, state.vrsMap]);
+
+  const openGuessMatch = (m) => {
+    setGuessFocus({ tourId: m.tourId, stageIdx: m.stageIdx, matchId: m.matchId });
+    setGuessAmountInput('');
+    setGuessPickTeamId(null);
+    setGuessMsg('');
+  };
+
+  const appendGuessDigit = (digit) => {
+    const d = String(digit);
+    if (!/^\d$/.test(d)) return;
+    const nextRaw = (guessAmountInput === '0' ? d : `${guessAmountInput}${d}`).replace(/^0+(\d)/, '$1');
+    const nextVal = Number(nextRaw || 0);
+    if (nextVal > (state.funds || 0)) return;
+    setGuessAmountInput(nextRaw);
+  };
+
+  const placeGuess = () => {
+    if (!activeGuessMatch || !activeGuessMatch.tA || !activeGuessMatch.tB) return setGuessMsg('该场比赛尚未确定对阵。');
+    const amount = Math.floor(Number(guessAmountInput || 0));
+    if (!guessPickTeamId) return setGuessMsg('请先选择预测胜者。');
+    if (!Number.isFinite(amount) || amount < 0) return setGuessMsg('请输入有效金额。');
+    if (amount > (state.funds || 0)) return setGuessMsg('金额不能大于当前资金。');
+    const pickOdds = guessPickTeamId === activeGuessMatch.tA.id ? activeGuessMatch.oddsA : activeGuessMatch.oddsB;
+    const pickName = guessPickTeamId === activeGuessMatch.tA.id ? activeGuessMatch.tA.name : activeGuessMatch.tB.name;
+    setState(prev => {
+      if (amount > (prev.funds || 0)) return prev;
+      let placed = false;
+      const tours = prev.tournaments.map(t => {
+        if (t.id !== activeGuessMatch.tourId) return t;
+        return {
+          ...t,
+          stages: t.stages.map((st, idx) => {
+            if (idx !== activeGuessMatch.stageIdx) return st;
+            return {
+              ...st,
+              nodes: st.nodes.map(n => {
+                if (n.id !== activeGuessMatch.matchId) return n;
+                if (n.prediction) return n;
+                placed = true;
+                return {
+                  ...n,
+                  prediction: {
+                    guessId: `${t.id}:${n.id}`,
+                    pickTeamId: guessPickTeamId,
+                    pickTeamName: pickName,
+                    amount,
+                    oddsA: activeGuessMatch.oddsA,
+                    oddsB: activeGuessMatch.oddsB,
+                    chosenOdds: pickOdds,
+                    settled: false,
+                    success: null,
+                    payout: 0,
+                    placeDate: prev.currentDate
+                  }
+                };
+              })
+            };
+          })
+        };
+      });
+      if (!placed) return prev;
+      const historyEntry = {
+        id: `${activeGuessMatch.tourId}:${activeGuessMatch.matchId}`,
+        status: 'PENDING',
+        tourId: activeGuessMatch.tourId,
+        tourName: activeGuessMatch.tourName,
+        stageIdx: activeGuessMatch.stageIdx,
+        matchId: activeGuessMatch.matchId,
+        matchName: activeGuessMatch.name,
+        matchDate: activeGuessMatch.date,
+        teamAName: activeGuessMatch.tA.name,
+        teamBName: activeGuessMatch.tB.name,
+        pickTeamId: guessPickTeamId,
+        pickTeamName: pickName,
+        amount,
+        oddsA: activeGuessMatch.oddsA,
+        oddsB: activeGuessMatch.oddsB,
+        chosenOdds: pickOdds,
+        payout: 0,
+        success: null,
+        placeDate: prev.currentDate
+      };
+      return {
+        ...prev,
+        tournaments: tours,
+        funds: (prev.funds || 0) - amount,
+        guessHistory: [historyEntry, ...(prev.guessHistory || [])]
+      };
+    });
+    setGuessFocus(null);
+    setGuessAmountInput('');
+    setGuessPickTeamId(null);
+    setGuessMsg('');
+  };
+
   const appRootClass = isDayMode
     ? "day-mode min-h-screen bg-slate-100 text-slate-900 p-4 md:p-8 font-sans"
     : "min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans";
@@ -1595,8 +1764,159 @@ export default function App() {
           )}
         </button>
       </div>
+      <button
+        onClick={() => {
+          if (view !== 'letusguess') setLastMainView(view);
+          setGuessTab('predict');
+          setGuessFocus(null);
+          setGuessMsg('');
+          setView('letusguess');
+        }}
+        className="fixed left-4 bottom-4 z-50 border-2 border-red-600 bg-black text-red-500 font-black px-4 py-2 rounded-lg tracking-wide hover:bg-red-950/20 transition"
+      >
+        LETUSGUESS
+      </button>
 
       <main className="max-w-[1400px] mx-auto">
+        {view === 'letusguess' && (
+          <div className="max-w-6xl mx-auto bg-black border border-red-700 rounded-2xl shadow-2xl p-6 space-y-5 text-red-500">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-3xl font-black tracking-widest">LETUSGUESS</h2>
+              <button
+                onClick={() => { setGuessFocus(null); setGuessMsg(''); setView(lastMainView || 'ranking'); }}
+                className="px-4 py-2 rounded-lg border border-red-700 bg-red-900/20 hover:bg-red-900/40 text-red-300 font-bold"
+              >
+                返回
+              </button>
+            </div>
+            {!guessFocus && (
+              <>
+                <div className="flex items-center gap-2 border border-red-800 p-1 rounded-xl w-fit">
+                  <button onClick={() => setGuessTab('predict')} className={`px-4 py-1.5 rounded-lg font-bold ${guessTab === 'predict' ? 'bg-red-700 text-black' : 'bg-black text-red-300 border border-red-800'}`}>预测</button>
+                  <button onClick={() => setGuessTab('history')} className={`px-4 py-1.5 rounded-lg font-bold ${guessTab === 'history' ? 'bg-red-700 text-black' : 'bg-black text-red-300 border border-red-800'}`}>历史</button>
+                </div>
+                <div className="text-xs leading-relaxed text-red-300 bg-[#130606] border border-red-900 rounded-xl p-4">
+                  提示2：返还比例计算公式为：设两支战队的 VRS 积分为 a、b，令 c=min{1000,min(a,b)-1}，p=a-c，q=b-c，k=2pq/(p+q)，m=1.50-ln(p/k)，n=1.50-ln(q/k)，对 m、n 保留两位小数。再令 x=clamp(m,1.00,15.00)，y=clamp(n,1.00,15.00)，分别作为两队返还比例。
+                </div>
+              </>
+            )}
+            {guessFocus && activeGuessMatch ? (
+              <div className="space-y-4">
+                <button onClick={() => { setGuessFocus(null); setGuessMsg(''); }} className="px-3 py-1.5 rounded-lg border border-red-800 text-red-300 hover:bg-red-950/40">返回预测列表</button>
+                <div className="border border-red-800 rounded-xl p-4 bg-[#120707]">
+                  <div className="text-xs text-red-300 mb-2">{activeGuessMatch.tourName} - {activeGuessMatch.name}</div>
+                  <div className="max-w-[520px]">
+                    <UnifiedMatchNode m={activeGuessMatch} />
+                  </div>
+                  {activeGuessMatch.tA && activeGuessMatch.tB && (
+                    <div className="mt-2 text-sm text-red-300">
+                      返还比例：{activeGuessMatch.tA.name} <span className="font-black">{activeGuessMatch.oddsA.toFixed(2)}x</span> / {activeGuessMatch.tB.name} <span className="font-black">{activeGuessMatch.oddsB.toFixed(2)}x</span>
+                    </div>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button disabled={!activeGuessMatch.tA} onClick={() => setGuessPickTeamId(activeGuessMatch.tA?.id || null)} className={`p-3 rounded-xl border font-bold ${guessPickTeamId === activeGuessMatch.tA?.id ? 'border-red-500 bg-red-700 text-black' : 'border-red-900 bg-black text-red-300'} disabled:opacity-40`}>
+                    预测 {activeGuessMatch.tA?.name || 'TBD'} 胜利
+                  </button>
+                  <button disabled={!activeGuessMatch.tB} onClick={() => setGuessPickTeamId(activeGuessMatch.tB?.id || null)} className={`p-3 rounded-xl border font-bold ${guessPickTeamId === activeGuessMatch.tB?.id ? 'border-red-500 bg-red-700 text-black' : 'border-red-900 bg-black text-red-300'} disabled:opacity-40`}>
+                    预测 {activeGuessMatch.tB?.name || 'TBD'} 胜利
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 items-start">
+                  <div className="bg-black border border-red-800 rounded-xl p-4">
+                    <div className="text-xs text-red-300 mb-2">输入金额（仅非负整数）</div>
+                    <div className="bg-[#101010] border border-red-700 rounded-lg px-3 py-2 font-mono text-xl text-green-500 mb-3">${(Number(guessAmountInput || 0)).toLocaleString()}</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[1,2,3,4,5,6,7,8,9,'C',0,'⌫'].map((k, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            if (k === 'C') return setGuessAmountInput('');
+                            if (k === '⌫') return setGuessAmountInput(v => String(v || '').slice(0, -1));
+                            appendGuessDigit(k);
+                          }}
+                          className="h-11 rounded-lg border border-red-900 bg-[#130808] text-red-300 font-black hover:bg-red-900/30"
+                        >
+                          {k}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <div className="text-sm text-red-300">当前资金：<span className="text-green-500 font-black">${(state.funds || 0).toLocaleString()}</span></div>
+                    <button onClick={placeGuess} className="px-5 py-3 rounded-xl bg-red-700 hover:bg-red-600 text-black font-black">
+                      投入资金进行预测
+                    </button>
+                    {guessMsg && <div className="text-sm text-red-300">{guessMsg}</div>}
+                  </div>
+                </div>
+              </div>
+            ) : guessTab === 'predict' ? (
+              <div className="space-y-4">
+                <div className="text-sm text-red-300">预测板块：展示 {guessDate} 的全部赛程。</div>
+                {guessMatches.length === 0 ? (
+                  <div className="border border-red-900 bg-[#100707] rounded-xl p-6 text-center text-red-300">下一天暂无比赛。</div>
+                ) : (
+                  guessMatches.map((m, idx) => (
+                    <div key={`${m.tourId}:${m.matchId}:${idx}`} className="border border-red-900 bg-[#100707] rounded-xl p-3 flex flex-col lg:flex-row gap-4 items-start">
+                      <div className="w-full lg:w-[360px]"><UnifiedMatchNode m={m} /></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="text-sm text-red-200 font-bold">{m.tourName} - {m.name}</div>
+                        {m.tA && m.tB ? (
+                          <div className="text-sm text-red-300">
+                            返还比例：{m.tA.name} <span className="font-black">{m.oddsA.toFixed(2)}x</span> / {m.tB.name} <span className="font-black">{m.oddsB.toFixed(2)}x</span>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-red-300">返还比例：待定（TBD vs TBD）</div>
+                        )}
+                        {m.prediction ? (
+                          <div className="text-sm">
+                            您预测 {m.prediction.pickTeamName} 胜利。已投入预测资金：<span className="text-green-500 font-black">{m.prediction.amount}$</span>
+                          </div>
+                        ) : (
+                          <button
+                            disabled={!m.tA || !m.tB}
+                            onClick={() => openGuessMatch(m)}
+                            className="px-4 py-2 rounded-lg border border-red-700 bg-red-900/20 hover:bg-red-900/40 text-red-300 font-bold disabled:opacity-40"
+                          >
+                            预测本场比赛
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="text-sm text-red-300">历史板块：从新到旧展示你的预测记录。</div>
+                {(state.guessHistory || []).length === 0 ? (
+                  <div className="border border-red-900 bg-[#100707] rounded-xl p-6 text-center text-red-300">暂无预测历史。</div>
+                ) : (
+                  (state.guessHistory || []).map((g, idx) => {
+                    const t = state.tournaments.find(tt => tt.id === g.tourId);
+                    const st = t?.stages?.[g.stageIdx];
+                    const m = st?.nodes?.find(n => n.id === g.matchId);
+                    return (
+                      <div key={`${g.id}:${idx}`} className="border border-red-900 bg-[#100707] rounded-xl p-3 flex flex-col lg:flex-row gap-4 items-start">
+                        <div className="w-full lg:w-[360px]">{m ? <UnifiedMatchNode m={m} /> : <div className="text-xs text-red-300 p-3">比赛卡片不可用</div>}</div>
+                        <div className="flex-1 text-sm space-y-1">
+                          <div className="font-bold text-red-200">{g.tourName} - {g.matchName}</div>
+                          <div>预测胜者：<span className="font-black">{g.pickTeamName}</span></div>
+                          <div>投入资金：<span className="text-green-500 font-black">{g.amount}$</span></div>
+                          <div>返还比例：{g.teamAName} {Number(g.oddsA || 1).toFixed(2)}x / {g.teamBName} {Number(g.oddsB || 1).toFixed(2)}x</div>
+                          <div>预测结果：{g.status === 'PENDING' ? '待结算' : g.success ? <span className="text-green-500 font-black">成功</span> : <span className="text-red-400 font-black">失败</span>}</div>
+                          <div>结算资金：<span className="text-green-500 font-black">{Number(g.payout || 0).toLocaleString()}$</span></div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
+        )}
         {view === 'ranking' && (
           <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-slate-800 bg-slate-900/80 flex flex-col md:flex-row items-center justify-between gap-4">
