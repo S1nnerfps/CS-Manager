@@ -5,6 +5,7 @@
 ## Beta Version 0.11
 
 - 更新了不同窗口的适配。
+- 修复了部分文字显示问题。
 
 ## Beta Version 0.10
 
