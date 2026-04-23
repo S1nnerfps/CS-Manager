@@ -1778,37 +1778,70 @@ export default function App() {
         .day-mode .text-slate-400, .day-mode .text-slate-500 { color: #475569 !important; }
         .day-mode .shadow-2xl, .day-mode .shadow-xl, .day-mode .shadow-lg { box-shadow: 0 6px 16px rgba(15,23,42,0.08) !important; }
         .day-mode .calendar-team-white { color: #ffffff !important; }
+        @media (max-width: 900px) {
+          .top-safe-row { padding-right: min(18rem, 72vw); }
+          .floating-panel {
+            top: 0.5rem;
+            right: 0.5rem;
+            width: min(18rem, 72vw);
+            padding: 0.5rem;
+            border-radius: 0.875rem;
+          }
+          .floating-funds { font-size: 10px; line-height: 1.1; }
+          .floating-date { font-size: 12px; }
+          .floating-next-btn { padding: 0.45rem 0.5rem; }
+          .floating-mode-btn { padding: 0.5rem 0.5rem; }
+          .floating-mode-btn .mode-icon { width: 1.6rem; height: 1.6rem; }
+        }
+        @media (max-width: 640px) {
+          .top-safe-row { padding-right: min(15rem, 68vw); }
+          .nav-buttons button {
+            flex: 1 1 calc(50% - 0.5rem);
+            min-width: 0;
+            justify-content: center;
+          }
+          .nav-buttons button span.nav-text {
+            font-size: 0.75rem;
+            line-height: 1rem;
+          }
+        }
+        @media (max-width: 420px) {
+          .top-safe-row { padding-right: min(13rem, 65vw); }
+          .floating-panel { width: min(13rem, 65vw); }
+          .nav-buttons button { flex-basis: 100%; }
+          .floating-next-btn .next-hotkey { font-size: 8px; }
+        }
       `}</style>
-      <div className="max-w-[1400px] mx-auto w-full flex justify-center mb-6">
-        <h1 className="text-2xl md:text-4xl lg:text-[42px] xl:text-[46px] font-black text-slate-100 tracking-widest uppercase whitespace-nowrap">
+      <div className="top-safe-row max-w-[1400px] mx-auto w-full flex justify-center mb-6">
+        <h1 className="text-center text-xl sm:text-2xl md:text-4xl lg:text-[42px] xl:text-[46px] font-black text-slate-100 tracking-wide sm:tracking-widest uppercase break-words">
           Counter-Strike 2 Event Manager
         </h1>
       </div>
 
-      <nav className={`max-w-[1400px] mx-auto flex flex-wrap items-center justify-between gap-4 mb-8 bg-slate-900/80 p-4 rounded-2xl shadow-xl border border-slate-800`}>
-        <div className="flex flex-wrap items-center gap-2 min-w-0">
-          <button onClick={() => setView('ranking')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'ranking' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Globe size={16}/> Rankings</button>
-          <button onClick={() => { setView('organize'); setConfig(prev => ({ ...prev, invDate: addDays(state.currentDate, 1) })); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'organize' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><PlusCircle size={16}/> Organize</button>
-          <button onClick={() => setView('history')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'history' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><ListOrdered size={16}/> History</button>
-          <button onClick={() => { setView('calendar'); setScheduleDate(state.currentDate); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'calendar' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Calendar size={16}/> Event Calendar</button>
-          {activeTour && <button onClick={() => setView('tournament')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'tournament' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-yellow-500 hover:bg-slate-800'}`}><Sword size={16}/> Live</button>}
+      <nav className={`top-safe-row max-w-[1400px] mx-auto flex flex-wrap items-center justify-between gap-3 mb-8 bg-slate-900/80 p-3 sm:p-4 rounded-2xl shadow-xl border border-slate-800`}>
+        <div className="nav-buttons flex w-full flex-wrap items-center gap-2 min-w-0">
+          <button onClick={() => setView('ranking')} className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition font-bold min-w-0 ${view === 'ranking' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Globe size={16}/><span className="nav-text">Rankings</span></button>
+          <button onClick={() => { setView('organize'); setConfig(prev => ({ ...prev, invDate: addDays(state.currentDate, 1) })); }} className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition font-bold min-w-0 ${view === 'organize' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><PlusCircle size={16}/><span className="nav-text">Organize</span></button>
+          <button onClick={() => setView('history')} className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition font-bold min-w-0 ${view === 'history' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><ListOrdered size={16}/><span className="nav-text">History</span></button>
+          <button onClick={() => { setView('calendar'); setScheduleDate(state.currentDate); }} className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition font-bold min-w-0 ${view === 'calendar' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Calendar size={16}/><span className="nav-text">Event Calendar</span></button>
+          {activeTour && <button onClick={() => setView('tournament')} className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition font-bold min-w-0 ${view === 'tournament' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-yellow-500 hover:bg-slate-800'}`}><Sword size={16}/><span className="nav-text">Live</span></button>}
         </div>
       </nav>
 
 
-      <div className="fixed top-4 right-4 z-50 bg-slate-900/95 border border-slate-700 rounded-2xl p-3 shadow-2xl backdrop-blur-sm">
-        <div className="font-mono text-xs md:text-sm font-black text-green-500 tracking-wide text-right mb-1">Current Funds: ${(state.funds || 0).toLocaleString()}</div>
-        <div className="font-mono text-sm md:text-base font-black text-orange-500 tracking-widest text-right mb-2">{state.currentDate}</div>
+      <div className="floating-panel fixed top-4 right-4 z-50 bg-slate-900/95 border border-slate-700 rounded-2xl p-3 shadow-2xl backdrop-blur-sm">
+        <div className="floating-funds font-mono text-xs md:text-sm font-black text-green-500 tracking-wide text-right mb-1">Current Funds: ${(state.funds || 0).toLocaleString()}</div>
+        <div className="floating-date font-mono text-sm md:text-base font-black text-orange-500 tracking-wider sm:tracking-widest text-right mb-2">{state.currentDate}</div>
         <button
           onClick={handleAdvanceDay}
-          className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 px-5 py-2 rounded-lg font-black transition-all shadow-lg hover:shadow-orange-500/30 flex flex-col items-center leading-tight"
+          className="floating-next-btn w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 px-5 py-2 rounded-lg font-black transition-all shadow-lg hover:shadow-orange-500/30 flex flex-col items-center leading-tight"
         >
-          <span className="flex items-center gap-2">Next Day<Clock size={15}/></span>
-          <span className="text-[10px] text-orange-900">Press or Enter '&gt;'</span>
+          <span className="flex items-center gap-2 text-xs sm:text-sm">Next Day<Clock size={15}/></span>
+          <span className="next-hotkey text-[10px] text-orange-900">Press or Enter '&gt;'</span>
         </button>
         <button
           onClick={() => setIsDayMode(v => !v)}
-          className={`mt-2 w-full rounded-full px-3 py-2.5 border transition-all shadow-inner font-black tracking-wide text-[12px] flex items-center ${
+          className={`floating-mode-btn mt-2 w-full rounded-full px-3 py-2.5 border transition-all shadow-inner font-black tracking-wide text-[11px] sm:text-[12px] flex items-center ${
             isDayMode
               ? 'bg-slate-100 border-slate-300 text-slate-800 justify-between'
               : 'bg-[#2f3338] border-slate-600 text-slate-100 justify-start gap-2'
@@ -1817,13 +1850,13 @@ export default function App() {
           {isDayMode ? (
             <>
               <span>DAYMODE</span>
-              <span className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center">
+              <span className="mode-icon w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center">
                 <Sun size={16} className="text-slate-800" />
               </span>
             </>
           ) : (
             <>
-              <span className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center">
+              <span className="mode-icon w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center">
                 <Moon size={16} className="text-slate-800" />
               </span>
               <span>NIGHTMODE</span>
@@ -2132,7 +2165,7 @@ export default function App() {
             </div>
             <div className="mb-6 flex items-center gap-2 text-sm text-slate-300">
               <input id="track-today" type="checkbox" checked={trackCalendarToday} onChange={e => setTrackCalendarToday(e.target.checked)} className="accent-blue-500" />
-              <label htmlFor="track-today" className="cursor-pointer">Track Today (when checked, clicking \"Next Day\" on this page jumps to today automatically)</label>
+              <label htmlFor="track-today" className="cursor-pointer">Track Today (when checked, clicking "Next Day" on this page jumps to today automatically)</label>
             </div>
             <div className="space-y-4">
               {scheduledMatchesForDay.length === 0 ? <div className="text-center py-12 text-slate-500 bg-slate-950/50 rounded-xl border border-dashed border-slate-800">No scheduled matches for this day.</div> :
