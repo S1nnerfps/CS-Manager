@@ -110,9 +110,9 @@ const TEAM_LABELS = {
 };
 
 const TEAM_LABEL_DISPLAY = {
-  [TEAM_LABELS.TOP]: '\u9876\u7ea7\u6218\u961f',
-  [TEAM_LABELS.STRONG]: '\u4e16\u754c\u5f3a\u961f',
-  [TEAM_LABELS.STAR]: '\u660e\u661f\u6218\u961f'
+  [TEAM_LABELS.TOP]: 'Top Team',
+  [TEAM_LABELS.STRONG]: 'Strong Team',
+  [TEAM_LABELS.STAR]: 'Star Team'
 };
 
 const calculatePrize = (formatId, tierId) => Math.round((FORMATS[formatId]?.basePrize || 0) * (TOURNAMENT_TIERS[tierId]?.multiplier || 0));
@@ -898,7 +898,7 @@ const UnifiedMatchNode = ({ m }) => {
        <div className="bg-[#0b101a] border-t border-[#1e293b] flex flex-col">
           <button onClick={() => setOpen(!open)} className="w-full py-1.5 flex justify-center items-center gap-1 text-[#475569] hover:text-slate-300 transition-colors">
              {open ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
-            <span className="text-[9px]">展开详情</span>
+            <span className="text-[9px]">Expand Details</span>
           </button>
           {isPlayed && (
             <div className="px-3 py-1.5 border-t border-[#1e293b]/70 text-[10px] flex justify-between items-center">
@@ -1140,7 +1140,7 @@ const TournamentStandingsTable = ({ standings, onTeamClick, isDayMode }) => (
             <th className="px-6 py-4 text-right">Prize Earned</th>
             <th className="px-6 py-4">Initial VRS</th>
             <th className="px-6 py-4">Final VRS</th>
-            <th className="px-6 py-4 text-right">? VRS</th>
+            <th className="px-6 py-4 text-right">Δ VRS</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-800/50">
@@ -1207,7 +1207,7 @@ const TournamentPredictTable = ({ tour, state, getRegionBadgeClass }) => {
     <div className="bg-slate-900/80 rounded-2xl border border-slate-800 overflow-hidden">
       <div className="p-6 border-b border-slate-800 flex items-center gap-2">
         <Clock className="text-blue-500" />
-        <h2 className="text-xl font-bold text-slate-100">VRS 邀请预测 (VRS Invitation Prediction)</h2>
+        <h2 className="text-xl font-bold text-slate-100">VRS Invitation Prediction</h2>
       </div>
       {tour.formatId === 'MAJOR' ? (
         <div className="p-4 grid grid-cols-1 xl:grid-cols-3 gap-4">
@@ -1218,7 +1218,7 @@ const TournamentPredictTable = ({ tour, state, getRegionBadgeClass }) => {
                 <span className="text-xs text-slate-500">S3 {majorSlots.stage3[group.region]} / S2 {majorSlots.stage2[group.region]} / S1 {majorSlots.stage1[group.region]}</span>
               </div>
               <div className={`max-h-80 overflow-y-auto ${SCROLLBAR}`}>
-                {[{ key: 'stage3', label: '\u76f4\u9080 Stage 3' }, { key: 'stage2', label: '\u76f4\u9080 Stage 2' }, { key: 'stage1', label: '\u8fdb\u5165 Stage 1' }].map(sec => (
+                {[{ key: 'stage3', label: 'Direct Invite Stage 3' }, { key: 'stage2', label: 'Direct Invite Stage 2' }, { key: 'stage1', label: 'Enter Stage 1' }].map(sec => (
                   <div key={sec.key} className="border-b last:border-b-0 border-slate-800 p-3">
                     <div className="text-xs font-bold text-slate-400 mb-2">{sec.label}</div>
                     {group[sec.key].length === 0 ? <div className="text-xs text-slate-600">No slot</div> : group[sec.key].map(t => (
@@ -1274,13 +1274,13 @@ class LetUsGuessBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div className="max-w-4xl mx-auto bg-[#060000] border border-[#4d0a0a] rounded-2xl p-6 text-[#ff8a8a]">
-          <div className="text-xl font-black mb-3">LETUSGUESS 页面渲染异常</div>
-          <div className="text-sm mb-4">已触发防白屏保护。请返回主页面后重试。</div>
+          <div className="text-xl font-black mb-3">LETUSGUESS Render Error</div>
+          <div className="text-sm mb-4">White-screen protection triggered. Please return to the main page and try again.</div>
           <button
             onClick={this.props.onExit}
             className="px-4 py-2 rounded-lg border border-[#8f1414] bg-[#1a0303] hover:bg-[#2a0606] text-[#ffb3b3] font-bold"
           >
-            返回主页面
+            Back to Main
           </button>
         </div>
       );
@@ -1374,6 +1374,11 @@ export default function App() {
   };
 
   const activeTour = useMemo(() => state.tournaments.find(t => t.id === activeTourId), [state.tournaments, activeTourId]);
+  useEffect(() => {
+    if (view === 'tournament' && activeTour && activeTour.status !== 'COMPLETED' && activeStageIdx === 'standings') {
+      setActiveStageIdx('participants');
+    }
+  }, [view, activeTour, activeStageIdx]);
   const activeTourHeat = useMemo(() => {
     if (!activeTour) return 0;
     if (Number.isFinite(activeTour.totalHeat)) return activeTour.totalHeat;
@@ -1673,11 +1678,11 @@ export default function App() {
   };
 
   const placeGuess = () => {
-    if (!activeGuessMatch || !activeGuessMatch.tA || !activeGuessMatch.tB) return setGuessMsg('该场比赛尚未确定对阵。');
+    if (!activeGuessMatch || !activeGuessMatch.tA || !activeGuessMatch.tB) return setGuessMsg('This match pairing is not confirmed yet.');
     const amount = Math.floor(Number(guessAmountInput || 0));
-    if (!guessPickTeamId) return setGuessMsg('请先选择预测胜者。');
-    if (!Number.isFinite(amount) || amount < 0) return setGuessMsg('请输入有效金额。');
-    if (amount > (state.funds || 0)) return setGuessMsg('金额不能大于当前资金。');
+    if (!guessPickTeamId) return setGuessMsg('Please select a predicted winner first.');
+    if (!Number.isFinite(amount) || amount < 0) return setGuessMsg('Please enter a valid amount.');
+    if (amount > (state.funds || 0)) return setGuessMsg('Amount cannot exceed current funds.');
     const pickOdds = guessPickTeamId === activeGuessMatch.tA.id ? activeGuessMatch.oddsA : activeGuessMatch.oddsB;
     const pickName = guessPickTeamId === activeGuessMatch.tA.id ? activeGuessMatch.tA.name : activeGuessMatch.tB.name;
     setState(prev => {
@@ -1782,23 +1787,23 @@ export default function App() {
 
       <nav className={`max-w-[1400px] mx-auto flex flex-wrap items-center justify-between gap-4 mb-8 bg-slate-900/80 p-4 rounded-2xl shadow-xl border border-slate-800`}>
         <div className="flex flex-wrap items-center gap-2 min-w-0">
-          <button onClick={() => setView('ranking')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'ranking' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Globe size={16}/> 榜单</button>
-          <button onClick={() => { setView('organize'); setConfig(prev => ({ ...prev, invDate: addDays(state.currentDate, 1) })); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'organize' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><PlusCircle size={16}/> 办赛</button>
-          <button onClick={() => setView('history')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'history' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><ListOrdered size={16}/> 赛事库</button>
-          <button onClick={() => { setView('calendar'); setScheduleDate(state.currentDate); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'calendar' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Calendar size={16}/> 赛事日历</button>
-          {activeTour && <button onClick={() => setView('tournament')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'tournament' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-yellow-500 hover:bg-slate-800'}`}><Sword size={16}/> 现场</button>}
+          <button onClick={() => setView('ranking')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'ranking' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Globe size={16}/> Rankings</button>
+          <button onClick={() => { setView('organize'); setConfig(prev => ({ ...prev, invDate: addDays(state.currentDate, 1) })); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'organize' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><PlusCircle size={16}/> Organize</button>
+          <button onClick={() => setView('history')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'history' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><ListOrdered size={16}/> History</button>
+          <button onClick={() => { setView('calendar'); setScheduleDate(state.currentDate); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'calendar' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-slate-400 hover:bg-slate-800'}`}><Calendar size={16}/> Event Calendar</button>
+          {activeTour && <button onClick={() => setView('tournament')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-bold ${view === 'tournament' ? 'bg-blue-600 text-white' : 'bg-slate-950 text-yellow-500 hover:bg-slate-800'}`}><Sword size={16}/> Live</button>}
         </div>
       </nav>
 
 
       <div className="fixed top-4 right-4 z-50 bg-slate-900/95 border border-slate-700 rounded-2xl p-3 shadow-2xl backdrop-blur-sm">
-        <div className="font-mono text-xs md:text-sm font-black text-green-500 tracking-wide text-right mb-1">{'\u5f53\u524d\u8d44\u91d1'}: ${(state.funds || 0).toLocaleString()}</div>
+        <div className="font-mono text-xs md:text-sm font-black text-green-500 tracking-wide text-right mb-1">Current Funds: ${(state.funds || 0).toLocaleString()}</div>
         <div className="font-mono text-sm md:text-base font-black text-orange-500 tracking-widest text-right mb-2">{state.currentDate}</div>
         <button
           onClick={handleAdvanceDay}
           className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 px-5 py-2 rounded-lg font-black transition-all shadow-lg hover:shadow-orange-500/30 flex flex-col items-center leading-tight"
         >
-          <span className="flex items-center gap-2">下一天<Clock size={15}/></span>
+          <span className="flex items-center gap-2">Next Day<Clock size={15}/></span>
           <span className="text-[10px] text-orange-900">Press or Enter '&gt;'</span>
         </button>
         <button
@@ -1848,7 +1853,7 @@ export default function App() {
               onClick={exitLetUsGuess}
               className="fixed left-6 top-6 z-[60] px-4 py-2 rounded-lg border border-[#5a0f16] bg-[#140306] hover:bg-[#21060a] text-[#c1848b] font-bold shadow-[0_0_14px_rgba(90,15,22,0.45)]"
             >
-              返回主页面
+              Back to Main
             </button>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-3xl font-black tracking-widest text-[#b5444f]">LETUSGUESS</h2>
@@ -1856,14 +1861,14 @@ export default function App() {
             {!guessFocus && (
               <>
                 <div className="flex items-center gap-2 border border-[#4f1218] p-1 rounded-xl w-fit bg-[#100204]">
-                  <button onClick={() => setGuessTab('predict')} className={`px-4 py-1.5 rounded-lg font-bold ${guessTab === 'predict' ? 'bg-[#6f1a22] text-[#f0d4d7]' : 'bg-[#070001] text-[#c48a90] border border-[#4f1218]'}`}>预测</button>
-                  <button onClick={() => setGuessTab('history')} className={`px-4 py-1.5 rounded-lg font-bold ${guessTab === 'history' ? 'bg-[#6f1a22] text-[#f0d4d7]' : 'bg-[#070001] text-[#c48a90] border border-[#4f1218]'}`}>历史</button>
+                  <button onClick={() => setGuessTab('predict')} className={`px-4 py-1.5 rounded-lg font-bold ${guessTab === 'predict' ? 'bg-[#6f1a22] text-[#f0d4d7]' : 'bg-[#070001] text-[#c48a90] border border-[#4f1218]'}`}>Predict</button>
+                  <button onClick={() => setGuessTab('history')} className={`px-4 py-1.5 rounded-lg font-bold ${guessTab === 'history' ? 'bg-[#6f1a22] text-[#f0d4d7]' : 'bg-[#070001] text-[#c48a90] border border-[#4f1218]'}`}>History</button>
                 </div>
               </>
             )}
             {guessFocus && activeGuessMatch ? (
               <div className="space-y-4">
-                <button onClick={() => { setGuessFocus(null); setGuessMsg(''); }} className="px-3 py-1.5 rounded-lg border border-[#5f161d] text-[#c9959b] hover:bg-[#1f070a]">返回预测列表</button>
+                <button onClick={() => { setGuessFocus(null); setGuessMsg(''); }} className="px-3 py-1.5 rounded-lg border border-[#5f161d] text-[#c9959b] hover:bg-[#1f070a]">Back to Predictions</button>
                 <div className="border border-[#4f1218] rounded-xl p-4 bg-[#100204]">
                   <div className="text-xs text-[#cda3a8] mb-2">{activeGuessMatch.tourName} - {activeGuessMatch.name}</div>
                   <div className="max-w-[520px]">
@@ -1871,21 +1876,21 @@ export default function App() {
                   </div>
                   {activeGuessMatch.tA && activeGuessMatch.tB && (
                     <div className="mt-2 text-sm text-[#cda3a8]">
-                      返还比例：{activeGuessMatch.tA.name} <span className="font-black">{activeGuessMatch.oddsA.toFixed(2)}x</span> / {activeGuessMatch.tB.name} <span className="font-black">{activeGuessMatch.oddsB.toFixed(2)}x</span>
+                      Return Rate:{activeGuessMatch.tA.name} <span className="font-black">{activeGuessMatch.oddsA.toFixed(2)}x</span> / {activeGuessMatch.tB.name} <span className="font-black">{activeGuessMatch.oddsB.toFixed(2)}x</span>
                     </div>
                   )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <button disabled={!activeGuessMatch.tA} onClick={() => setGuessPickTeamId(activeGuessMatch.tA?.id || null)} className={`p-3 rounded-xl border font-bold ${guessPickTeamId === activeGuessMatch.tA?.id ? 'border-[#8b2a33] bg-[#6b1b23] text-[#f1d8db]' : 'border-[#4b1217] bg-[#090001] text-[#c59097]'} disabled:opacity-40`}>
-                    预测 {activeGuessMatch.tA?.name || 'TBD'} 胜利
+                    Predict {activeGuessMatch.tA?.name || 'TBD'} to Win
                   </button>
                   <button disabled={!activeGuessMatch.tB} onClick={() => setGuessPickTeamId(activeGuessMatch.tB?.id || null)} className={`p-3 rounded-xl border font-bold ${guessPickTeamId === activeGuessMatch.tB?.id ? 'border-[#8b2a33] bg-[#6b1b23] text-[#f1d8db]' : 'border-[#4b1217] bg-[#090001] text-[#c59097]'} disabled:opacity-40`}>
-                    预测 {activeGuessMatch.tB?.name || 'TBD'} 胜利
+                    Predict {activeGuessMatch.tB?.name || 'TBD'} to Win
                   </button>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 items-start">
                   <div className="bg-[#060001] border border-[#4b1217] rounded-xl p-4">
-                    <div className="text-xs text-[#c79ca1] mb-2">输入金额（仅非负整数）</div>
+                    <div className="text-xs text-[#c79ca1] mb-2">Enter Amount (non-negative integers only)</div>
                     <div className="bg-[#0f0103] border border-[#5f161d] rounded-lg px-3 py-2 font-mono text-xl text-green-500 mb-3">${(Number(guessAmountInput || 0)).toLocaleString()}</div>
                     <div className="grid grid-cols-3 gap-2">
                       {[1,2,3,4,5,6,7,8,9,'C',0,'⌫'].map((k, idx) => (
@@ -1905,9 +1910,9 @@ export default function App() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-3">
-                    <div className="text-sm text-[#caa0a5]">当前资金：<span className="text-green-500 font-black">${(state.funds || 0).toLocaleString()}</span></div>
+                    <div className="text-sm text-[#caa0a5]">Current Funds:<span className="text-green-500 font-black">${(state.funds || 0).toLocaleString()}</span></div>
                     <button onClick={placeGuess} className="px-5 py-3 rounded-xl bg-[#6f1a22] hover:bg-[#83202a] text-[#f4d9dc] font-black">
-                      投入资金进行预测
+                      Place Prediction
                     </button>
                     {guessMsg && <div className="text-sm text-[#caa0a5]">{guessMsg}</div>}
                   </div>
@@ -1916,7 +1921,7 @@ export default function App() {
             ) : guessTab === 'predict' ? (
               <div className="space-y-4">
                 {guessMatches.length === 0 ? (
-                  <div className="border border-[#4b1217] bg-[#120204] rounded-xl p-6 text-center text-[#caa0a5]">下一天暂无比赛。</div>
+                  <div className="border border-[#4b1217] bg-[#120204] rounded-xl p-6 text-center text-[#caa0a5]">No matches scheduled for next day.</div>
                 ) : (
                   guessMatches.map((m, idx) => (
                     <div key={`${m.tourId}:${m.matchId}:${idx}`} className="border border-[#4b1217] bg-[#120204] rounded-xl p-3 flex flex-col lg:flex-row gap-4 items-start">
@@ -1925,14 +1930,14 @@ export default function App() {
                         <div className="text-sm text-[#e6c7cb] font-bold">{m.tourName} - {m.name}</div>
                         {m.tA && m.tB ? (
                           <div className="text-sm text-[#caa0a5]">
-                            返还比例：{m.tA.name} <span className="font-black">{m.oddsA.toFixed(2)}x</span> / {m.tB.name} <span className="font-black">{m.oddsB.toFixed(2)}x</span>
+                            Return Rate:{m.tA.name} <span className="font-black">{m.oddsA.toFixed(2)}x</span> / {m.tB.name} <span className="font-black">{m.oddsB.toFixed(2)}x</span>
                           </div>
                         ) : (
-                          <div className="text-sm text-[#caa0a5]">返还比例：待定（TBD vs TBD）</div>
+                          <div className="text-sm text-[#caa0a5]">Return Rate: TBD (TBD vs TBD)</div>
                         )}
                         {m.prediction ? (
                           <div className="text-sm text-[#e0c1c5]">
-                            您预测 {m.prediction.pickTeamName} 胜利。已投入预测资金：<span className="text-green-500 font-black">{m.prediction.amount}$</span>
+                            You predicted {m.prediction.pickTeamName} to win. Amount placed: <span className="text-green-500 font-black">{m.prediction.amount}$</span>
                           </div>
                         ) : (
                           <button
@@ -1940,7 +1945,7 @@ export default function App() {
                             onClick={() => openGuessMatch(m)}
                             className="px-4 py-2 rounded-lg border border-[#5b151c] bg-[#1d0508] hover:bg-[#300a0f] text-[#c9959b] font-bold disabled:opacity-40"
                           >
-                            预测本场比赛
+                            Predict This Match
                           </button>
                         )}
                       </div>
@@ -1951,7 +1956,7 @@ export default function App() {
             ) : (
               <div className="space-y-4">
                 {(state.guessHistory || []).length === 0 ? (
-                  <div className="border border-[#4b1217] bg-[#120204] rounded-xl p-6 text-center text-[#caa0a5]">暂无预测历史。</div>
+                  <div className="border border-[#4b1217] bg-[#120204] rounded-xl p-6 text-center text-[#caa0a5]">No prediction history yet.</div>
                 ) : (
                   (state.guessHistory || []).map((g, idx) => {
                     const t = state.tournaments.find(tt => tt.id === g.tourId);
@@ -1959,14 +1964,14 @@ export default function App() {
                     const m = st?.nodes?.find(n => n.id === g.matchId);
                     return (
                       <div key={`${g.id}:${idx}`} className="border border-[#4b1217] bg-[#120204] rounded-xl p-3 flex flex-col lg:flex-row gap-4 items-start">
-                        <div className="w-full lg:w-[360px]">{m ? <GuessMatchPreview m={m} /> : <div className="text-xs text-[#caa0a5] p-3">比赛卡片不可用</div>}</div>
+                        <div className="w-full lg:w-[360px]">{m ? <GuessMatchPreview m={m} /> : <div className="text-xs text-[#caa0a5] p-3">Match card unavailable</div>}</div>
                         <div className="flex-1 text-sm space-y-1 text-[#ddbec2]">
                           <div className="font-bold text-[#e8d1d4]">{g.tourName} - {g.matchName}</div>
-                          <div>预测胜者：<span className="font-black">{g.pickTeamName}</span></div>
-                          <div>投入资金：<span className="text-green-500 font-black">{g.amount}$</span></div>
-                          <div>返还比例：{g.teamAName} {Number(g.oddsA || 1).toFixed(2)}x / {g.teamBName} {Number(g.oddsB || 1).toFixed(2)}x</div>
-                          <div>预测结果：{g.status === 'PENDING' ? '待结算' : g.success ? <span className="text-green-500 font-black">成功</span> : <span className="text-red-400 font-black">失败</span>}</div>
-                          <div>结算资金：<span className="text-green-500 font-black">{Number(g.payout || 0).toLocaleString()}$</span></div>
+                          <div>Predicted Winner:<span className="font-black">{g.pickTeamName}</span></div>
+                          <div>Stake:<span className="text-green-500 font-black">{g.amount}$</span></div>
+                          <div>Return Rate:{g.teamAName} {Number(g.oddsA || 1).toFixed(2)}x / {g.teamBName} {Number(g.oddsB || 1).toFixed(2)}x</div>
+                          <div>Prediction Result:{g.status === 'PENDING' ? 'Pending' : g.success ? <span className="text-green-500 font-black">Success</span> : <span className="text-red-400 font-black">Failed</span>}</div>
+                          <div>Payout:<span className="text-green-500 font-black">{Number(g.payout || 0).toLocaleString()}$</span></div>
                         </div>
                       </div>
                     );
@@ -1979,20 +1984,20 @@ export default function App() {
           </LetUsGuessBoundary>
         ); } catch (e) { return (
           <div className="max-w-4xl mx-auto bg-[#060000] border border-[#4d0a0a] rounded-2xl p-6 text-[#ff8a8a]">
-            <div className="text-xl font-black mb-3">LETUSGUESS 页面渲染异常</div>
-            <div className="text-sm mb-4">已触发兜底保护。请先返回主页面再重试。</div>
+            <div className="text-xl font-black mb-3">LETUSGUESS Render Error</div>
+            <div className="text-sm mb-4">Fallback protection triggered. Please return to the main page and try again.</div>
             <button
               onClick={exitLetUsGuess}
               className="px-4 py-2 rounded-lg border border-[#8f1414] bg-[#1a0303] hover:bg-[#2a0606] text-[#ffb3b3] font-bold"
             >
-              返回主页面
+              Back to Main
             </button>
           </div>
         ); } })()}
         {view === 'ranking' && (
           <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-slate-800 bg-slate-900/80 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-2"><BarChart3 className="text-blue-500" /><h2 className="text-xl font-bold text-slate-100">全球 VRS 排行榜 (Top 100)</h2></div>
+              <div className="flex items-center gap-2"><BarChart3 className="text-blue-500" /><h2 className="text-xl font-bold text-slate-100">Global VRS Rankings (Top 100)</h2></div>
               <div className="flex flex-col sm:flex-row items-center gap-2">
                  <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-1">
                   {['Global', 'EU', 'AM', 'AS'].map(r => (
@@ -2002,15 +2007,15 @@ export default function App() {
                   ))}
                  </div>
                  <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-1">
-                  <button onClick={() => setSortMode('VRS')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'VRS' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'}`}>按 VRS</button>
-                   <button onClick={() => setSortMode('PRIZE')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'PRIZE' ? 'bg-green-600 text-white' : 'text-slate-400 hover:text-white'}`}>按赏金</button>
+                  <button onClick={() => setSortMode('VRS')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'VRS' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-white'}`}>By VRS</button>
+                   <button onClick={() => setSortMode('PRIZE')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${sortMode === 'PRIZE' ? 'bg-green-600 text-white' : 'text-slate-400 hover:text-white'}`}>By Earnings</button>
                  </div>
               </div>
             </div>
             <div className={`overflow-x-auto max-h-[75vh] ${SCROLLBAR}`}>
               <table className="w-full text-left">
                 <thead className="bg-slate-900 text-slate-500 text-xs uppercase sticky top-0 z-10 shadow-md">
-                  <tr><th className="px-6 py-4">Rank</th><th className="px-6 py-4 text-center">Region</th><th className="px-6 py-4">Team</th><th className="px-6 py-4"><div className="flex items-center gap-1">VRS Points {sortMode === 'VRS' && <ArrowDownUp size={12}/>}</div></th><th className="px-6 py-4 text-center">接受邀请成功率</th><th className="px-6 py-4 text-right"><div className="flex items-center justify-end gap-1">Career Earnings {sortMode === 'PRIZE' && <ArrowDownUp size={12}/>}</div></th></tr>
+                  <tr><th className="px-6 py-4">Rank</th><th className="px-6 py-4 text-center">Region</th><th className="px-6 py-4">Team</th><th className="px-6 py-4"><div className="flex items-center gap-1">VRS Points {sortMode === 'VRS' && <ArrowDownUp size={12}/>}</div></th><th className="px-6 py-4 text-center">Invite Acceptance Rate</th><th className="px-6 py-4 text-right"><div className="flex items-center justify-end gap-1">Career Earnings {sortMode === 'PRIZE' && <ArrowDownUp size={12}/>}</div></th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
                   {displayTeams.map((team) => (
@@ -2061,8 +2066,8 @@ export default function App() {
             </div>
             
             <div className="bg-slate-900/80 border border-slate-800 p-8 rounded-3xl shadow-xl">
-               <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-100"><Trophy className="text-yellow-500"/> 历史荣誉记录 (Historical Honors)</h3>
-               {(!selectedTeam.honors || selectedTeam.honors.length === 0) ? <div className="text-slate-500 text-center py-12 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">暂无历史荣誉</div> :
+               <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-100"><Trophy className="text-yellow-500"/> Historical Honors</h3>
+               {(!selectedTeam.honors || selectedTeam.honors.length === 0) ? <div className="text-slate-500 text-center py-12 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">No historical honors yet</div> :
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    {selectedTeam.honors.map((h, i) => {
                      const c = getHonorColor(h.tier, h.placement);
@@ -2079,12 +2084,12 @@ export default function App() {
             </div>
 
             <div className="bg-slate-900/80 border border-slate-800 p-8 rounded-3xl shadow-xl mt-6">
-                <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-100"><ListOrdered className="text-blue-500"/> 赛事记录 (Tournament History)</h3>
-                {teamTournaments.length === 0 ? <div className="text-slate-500 text-center py-12 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">暂无赛事记录</div> :
+                <h3 className="text-xl font-bold flex items-center gap-2 mb-6 text-slate-100"><ListOrdered className="text-blue-500"/> Tournament History</h3>
+                {teamTournaments.length === 0 ? <div className="text-slate-500 text-center py-12 bg-slate-950/50 rounded-2xl border border-dashed border-slate-800">No tournament records yet</div> :
                 <div className={`overflow-x-auto ${SCROLLBAR}`}>
                     <table className="w-full text-left text-sm">
                     <thead className="bg-slate-950 text-slate-400 uppercase text-xs">
-                        <tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Tournament</th><th className="px-4 py-3">Placement</th><th className="px-4 py-3 text-right">Prize</th><th className="px-4 py-3 text-right">螖 VRS</th></tr>
+                        <tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Tournament</th><th className="px-4 py-3">Placement</th><th className="px-4 py-3 text-right">Prize</th><th className="px-4 py-3 text-right">Δ VRS</th></tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/50">
                         {teamTournaments.map(tt => {
@@ -2113,7 +2118,7 @@ export default function App() {
         {view === 'calendar' && (
           <div className="max-w-4xl mx-auto bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
             <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
-              <h2 className="text-2xl font-black flex items-center gap-2 text-slate-100"><Calendar className="text-blue-500"/> 赛事日历</h2>
+              <h2 className="text-2xl font-black flex items-center gap-2 text-slate-100"><Calendar className="text-blue-500"/> Event Calendar</h2>
               <div className="flex items-center gap-2">
                  <button onClick={() => changeScheduleDate(-1)} className="bg-slate-800 p-2 rounded hover:bg-slate-700 transition"><ArrowLeft size={16}/></button>
                  <div className="flex items-center gap-1 bg-slate-950 border border-slate-700 rounded-lg px-2">
@@ -2127,10 +2132,10 @@ export default function App() {
             </div>
             <div className="mb-6 flex items-center gap-2 text-sm text-slate-300">
               <input id="track-today" type="checkbox" checked={trackCalendarToday} onChange={e => setTrackCalendarToday(e.target.checked)} className="accent-blue-500" />
-              <label htmlFor="track-today" className="cursor-pointer">跟踪当天（勾选后在本界面点击“下一天”会自动跳转到当天）</label>
+              <label htmlFor="track-today" className="cursor-pointer">Track Today (when checked, clicking \"Next Day\" on this page jumps to today automatically)</label>
             </div>
             <div className="space-y-4">
-              {scheduledMatchesForDay.length === 0 ? <div className="text-center py-12 text-slate-500 bg-slate-950/50 rounded-xl border border-dashed border-slate-800">当天暂无已排期比赛</div> :
+              {scheduledMatchesForDay.length === 0 ? <div className="text-center py-12 text-slate-500 bg-slate-950/50 rounded-xl border border-dashed border-slate-800">No scheduled matches for this day.</div> :
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {scheduledMatchesForDay.map((m, idx) => (
                     <div key={idx} className={`relative ${m.status === 'PLAYED' ? 'opacity-80' : ''}`}>
@@ -2147,14 +2152,14 @@ export default function App() {
         {view === 'history' && (
           <div className="space-y-12">
             <div className="flex items-center gap-4 bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
-               <span className="font-bold text-sm text-slate-400">赛事级别筛选</span>
+               <span className="font-bold text-sm text-slate-400">Tournament Tier Filter</span>
                {['ALL', ...TIER_ORDER].map(tf => (
                 <button key={tf} onClick={()=>setHistoryTierFilter(tf)} className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${historyTierFilter===tf ? 'bg-blue-600 text-white':'bg-slate-800 text-slate-500 hover:text-slate-300'}`}>{TOURNAMENT_TIERS[tf]?.name || 'ALL'}</button>
                ))}
             </div>
 
             {Object.keys(groupedHistory).length === 0 ? (
-              <div className="p-12 text-center text-slate-500 bg-slate-900/50 rounded-2xl border border-slate-800 shadow-inner">暂无赛事历史记录</div>
+              <div className="p-12 text-center text-slate-500 bg-slate-900/50 rounded-2xl border border-slate-800 shadow-inner">No tournament history yet</div>
             ) : (
               orderedHistoryFormats.map((formatId) => {
                 const formatGroup = groupedHistory[formatId];
@@ -2197,10 +2202,10 @@ export default function App() {
 
         {view === 'organize' && (
           <div className="max-w-2xl mx-auto bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
-            <h2 className="text-3xl font-black mb-8 flex items-center gap-3 text-slate-100"><span className="bg-blue-500/20 text-blue-500 p-2 rounded-xl"><Calendar /></span> 创建赛事</h2>
+            <h2 className="text-3xl font-black mb-8 flex items-center gap-3 text-slate-100"><span className="bg-blue-500/20 text-blue-500 p-2 rounded-xl"><Calendar /></span> Create Tournament</h2>
             <div className="space-y-6">
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">1. 基础赛制</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">1. Base Format</label>
                 <div className="grid grid-cols-2 gap-2">
                   {Object.values(FORMATS).map(f => (
                     <div key={f.id} onClick={() => handleFormatChange(f.id)} className={`p-3 rounded-xl border cursor-pointer font-bold transition-all text-center ${config.format === f.id ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-500'}`}>{f.name}</div>
@@ -2208,7 +2213,7 @@ export default function App() {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">2. 赛事档次 (Tiers)</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">2. Tournament Tiers</label>
                 <div className="grid grid-cols-3 gap-2">
                   {FORMATS[config.format].allowedTiers.map(tId => (
                     <div key={tId} onClick={() => setConfig({...config, tier: tId})} className={`p-3 rounded-xl border cursor-pointer transition-all text-center ${config.tier === tId ? 'border-orange-500 bg-orange-500/10 text-orange-400' : 'border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-500'}`}>
@@ -2218,7 +2223,7 @@ export default function App() {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">3. 邀请截止日期</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">3. Invitation Deadline</label>
                 <div className="w-full flex items-center gap-1 bg-slate-950 border border-slate-700 focus-within:border-blue-500 rounded-xl px-2">
                   <input ref={organizeDateInputRef} type="date" value={config.invDate} min={addDays(state.currentDate, 1)} onChange={e => setConfig({...config, invDate: e.target.value})} className={`w-full bg-transparent px-2 py-3 font-mono outline-none ${isDayMode ? 'text-black' : 'text-white'}`}/>
                   <button type="button" onClick={() => openDatePicker(organizeDateInputRef)} className="p-1 rounded hover:bg-slate-800/60 transition" aria-label="Open calendar">
@@ -2228,7 +2233,7 @@ export default function App() {
               </div>
               {['MAJOR', 'IEM', 'BLAST'].includes(config.format) && (
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">4. 举办城市</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">4. Host City</label>
                   <input
                     type="text"
                     value={citySearch}
@@ -2239,7 +2244,7 @@ export default function App() {
                       setConfig({ ...config, nameInput: exact });
                     }}
                     placeholder="Search city, e.g. Copenhagen"
-                    className="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-white font-bold outline-none"
+                    className={`w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 font-bold outline-none ${isDayMode ? 'text-black' : 'text-white'}`}
                   />
                   <div className="mt-2 max-h-40 overflow-y-auto bg-slate-950 border border-slate-800 rounded-xl p-2 space-y-1">
                     {citySearchResult.map(city => (
@@ -2257,16 +2262,16 @@ export default function App() {
                     )}
                   </div>
                   <div className="mt-2 text-xs text-slate-500">
-                    已选择: <span className="text-slate-300 font-semibold">{config.nameInput || '未选择'}</span>
+                    Selected: <span className="text-slate-300 font-semibold">{config.nameInput || 'None'}</span>
                   </div>
                 </div>
               )}
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center mt-4">
-                 <div><div className="text-[10px] text-slate-500 uppercase font-bold mb-1">鎬诲閲戦</div><div className="text-2xl font-mono font-black text-green-500">${calculatePrize(config.format, config.tier).toLocaleString()}</div></div>
+                 <div><div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Total Prize Pool</div><div className="text-2xl font-mono font-black text-green-500">${calculatePrize(config.format, config.tier).toLocaleString()}</div></div>
                  <DollarSign size={32} className="text-slate-800" />
               </div>
               {errorMsg && <div className="bg-red-500/10 border border-red-500/50 text-red-500 px-4 py-2 rounded-lg text-sm font-bold">{errorMsg}</div>}
-              <button onClick={handleCreateTournament} className="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-black text-lg transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] mt-4">创建赛事并加入赛事日历</button>
+              <button onClick={handleCreateTournament} className="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-black text-lg transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] mt-4">Create Tournament and Add to Calendar</button>
             </div>
           </div>
         )}
@@ -2296,7 +2301,9 @@ export default function App() {
 
             {activeTour.stages?.length > 0 && (
               <div className="flex flex-wrap gap-2 pb-2">
-                <button onClick={() => setActiveStageIdx('standings')} className={`px-6 py-2 rounded-xl font-bold whitespace-nowrap text-sm ${activeStageIdx === 'standings' ? 'bg-yellow-600 text-slate-900 shadow-md' : 'bg-slate-900 border border-slate-800 text-yellow-500 hover:bg-slate-800'}`}>Standings</button>
+                {activeTour.status === 'COMPLETED' && (
+                  <button onClick={() => setActiveStageIdx('standings')} className={`px-6 py-2 rounded-xl font-bold whitespace-nowrap text-sm ${activeStageIdx === 'standings' ? 'bg-yellow-600 text-slate-900 shadow-md' : 'bg-slate-900 border border-slate-800 text-yellow-500 hover:bg-slate-800'}`}>Standings</button>
+                )}
                 <button onClick={() => setActiveStageIdx('participants')} className={`px-6 py-2 rounded-xl font-bold whitespace-nowrap text-sm ${activeStageIdx === 'participants' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-900 border border-slate-800 text-blue-400 hover:bg-slate-800'}`}>Participants</button>
                 {activeTour.stages.map((stage, idx) => (
                   <button key={idx} onClick={() => setActiveStageIdx(idx)} className={`px-6 py-2 rounded-xl font-bold whitespace-nowrap text-sm ${activeStageIdx === idx ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-900 border border-slate-800 text-slate-400 hover:bg-slate-800'}`}>{stage.name}</button>
@@ -2304,10 +2311,8 @@ export default function App() {
               </div>
             )}
 
-            {activeStageIdx === 'standings' ? (
-              activeTour.status === 'COMPLETED' ? (
-                <TournamentStandingsTable standings={activeTour.standings} onTeamClick={(t) => {setSelectedTeamId(t.id); setView('team');}} isDayMode={isDayMode} />
-              ) : activeTour.stages?.[0] ? <StageViewer stage={activeTour.stages[0]} /> : <div className="text-center p-12 text-slate-500">暂无可展示的赛程数据</div>
+            {(activeTour.status === 'COMPLETED' && activeStageIdx === 'standings') ? (
+              <TournamentStandingsTable standings={activeTour.standings} onTeamClick={(t) => {setSelectedTeamId(t.id); setView('team');}} isDayMode={isDayMode} />
             ) : activeStageIdx === 'participants' ? (
               <TournamentParticipantsTable participants={activeTour.participants} onTeamClick={(t) => {setSelectedTeamId(t.id); setView('team');}} getRegionBadgeClass={getRegionBadgeClass} globalRankByTeamId={globalRankByTeamId} />
             ) : activeStageIdx !== 'standings' && activeStageIdx !== 'participants' && activeTour.stages[activeStageIdx] ? (
@@ -2319,4 +2324,5 @@ export default function App() {
     </div>
   );
 }
+
 
