@@ -1810,6 +1810,7 @@ export default function App() {
           .floating-panel { width: min(13rem, 65vw); }
           .nav-buttons button { flex-basis: 100%; }
           .floating-next-btn .next-hotkey { font-size: 8px; }
+          .tier-filter-mobile button { flex-basis: 100%; }
         }
       `}</style>
       <div className="top-safe-row max-w-[1400px] mx-auto w-full flex justify-center mb-6">
@@ -2149,18 +2150,18 @@ export default function App() {
         )}
 
         {view === 'calendar' && (
-          <div className="max-w-4xl mx-auto bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
-            <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
-              <h2 className="text-2xl font-black flex items-center gap-2 text-slate-100"><Calendar className="text-blue-500"/> Event Calendar</h2>
-              <div className="flex items-center gap-2">
-                 <button onClick={() => changeScheduleDate(-1)} className="bg-slate-800 p-2 rounded hover:bg-slate-700 transition"><ArrowLeft size={16}/></button>
-                 <div className="flex items-center gap-1 bg-slate-950 border border-slate-700 rounded-lg px-2">
-                   <input ref={scheduleDateInputRef} type="date" value={scheduleDate} onChange={e=>setScheduleDate(e.target.value)} className={`bg-transparent px-2 py-2 rounded-lg outline-none font-mono ${isDayMode ? 'text-black' : 'text-white'}`}/>
-                   <button type="button" onClick={() => openDatePicker(scheduleDateInputRef)} className="p-1 rounded hover:bg-slate-800/60 transition" aria-label="Open calendar">
-                     <Calendar size={14} className={isDayMode ? 'text-slate-700' : 'text-slate-300'} />
+          <div className="max-w-4xl mx-auto bg-slate-900 border border-slate-800 p-4 sm:p-8 rounded-3xl shadow-2xl overflow-x-hidden">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6 sm:mb-8 border-b border-slate-800 pb-4">
+              <h2 className="text-xl sm:text-2xl font-black flex items-center gap-2 text-slate-100"><Calendar className="text-blue-500"/> Event Calendar</h2>
+              <div className="w-full sm:w-auto flex items-center justify-end gap-1.5 sm:gap-2 flex-nowrap min-w-0">
+                 <button onClick={() => changeScheduleDate(-1)} className="shrink-0 bg-slate-800 p-2 rounded hover:bg-slate-700 transition"><ArrowLeft size={16}/></button>
+                 <div className="min-w-0 flex-1 sm:flex-none flex items-center gap-1 bg-slate-950 border border-slate-700 rounded-lg px-2">
+                   <input ref={scheduleDateInputRef} type="date" value={scheduleDate} onChange={e=>setScheduleDate(e.target.value)} className={`min-w-0 w-full sm:w-auto bg-transparent px-1.5 sm:px-2 py-2 rounded-lg outline-none font-mono text-xs sm:text-sm ${isDayMode ? 'text-black' : 'text-white'}`}/>
+                   <button type="button" onClick={() => openDatePicker(scheduleDateInputRef)} className="shrink-0 p-1 rounded hover:bg-slate-800/60 transition" aria-label="Open calendar">
+                    <Calendar size={14} className={isDayMode ? 'text-slate-700' : 'text-slate-300'} />
                    </button>
                  </div>
-                 <button onClick={() => changeScheduleDate(1)} className="bg-slate-800 p-2 rounded hover:bg-slate-700 transition"><ArrowRight size={16}/></button>
+                 <button onClick={() => changeScheduleDate(1)} className="shrink-0 bg-slate-800 p-2 rounded hover:bg-slate-700 transition"><ArrowRight size={16}/></button>
               </div>
             </div>
             <div className="mb-6 flex items-center gap-2 text-sm text-slate-300">
@@ -2183,11 +2184,11 @@ export default function App() {
         )}
 
         {view === 'history' && (
-          <div className="space-y-12">
-            <div className="flex items-center gap-4 bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
-               <span className="font-bold text-sm text-slate-400">Tournament Tier Filter</span>
+          <div className="space-y-12 overflow-x-hidden">
+            <div className="tier-filter-mobile flex flex-wrap items-center gap-2 sm:gap-3 bg-slate-900/50 p-3 sm:p-4 rounded-2xl border border-slate-800">
+               <span className="w-full sm:w-auto font-bold text-xs sm:text-sm text-slate-400">Tournament Tier Filter</span>
                {['ALL', ...TIER_ORDER].map(tf => (
-                <button key={tf} onClick={()=>setHistoryTierFilter(tf)} className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${historyTierFilter===tf ? 'bg-blue-600 text-white':'bg-slate-800 text-slate-500 hover:text-slate-300'}`}>{TOURNAMENT_TIERS[tf]?.name || 'ALL'}</button>
+                <button key={tf} onClick={()=>setHistoryTierFilter(tf)} className={`min-w-0 basis-[calc(50%-0.25rem)] sm:basis-auto px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-bold rounded-lg transition-colors text-center ${historyTierFilter===tf ? 'bg-blue-600 text-white':'bg-slate-800 text-slate-500 hover:text-slate-300'}`}>{TOURNAMENT_TIERS[tf]?.name || 'ALL'}</button>
                ))}
             </div>
 
