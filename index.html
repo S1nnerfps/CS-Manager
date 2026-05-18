@@ -1,21 +1,814 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CS-Manager</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>CSEMTV // Counter-Strike 2 Event Manager</title>
+    <meta
+      name="description"
+      content="Cyberpunk landing page for Counter-Strike 2 Event Manager with download and web demo access."
+    />
+    <style>
+      :root {
+        --bg-0: #02040a;
+        --bg-1: #07101a;
+        --bg-2: #0d1624;
+        --panel: rgba(7, 14, 24, 0.78);
+        --panel-strong: rgba(8, 16, 28, 0.92);
+        --text: #ebf8ff;
+        --muted: rgba(235, 248, 255, 0.72);
+        --subtle: rgba(235, 248, 255, 0.46);
+        --cyan: #38f2ff;
+        --cyan-strong: #00eaff;
+        --red: #ff345f;
+        --red-strong: #ff204c;
+        --amber: #ffb347;
+        --line: rgba(56, 242, 255, 0.22);
+        --line-strong: rgba(56, 242, 255, 0.5);
+        --danger-line: rgba(255, 52, 95, 0.35);
+        --shadow-cyan: 0 0 18px rgba(56, 242, 255, 0.28), 0 0 48px rgba(0, 234, 255, 0.10);
+        --shadow-red: 0 0 18px rgba(255, 52, 95, 0.28), 0 0 48px rgba(255, 32, 76, 0.10);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+      }
+
+      body {
+        position: relative;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at 16% 18%, rgba(56, 242, 255, 0.10), transparent 26%),
+          radial-gradient(circle at 84% 20%, rgba(255, 52, 95, 0.11), transparent 24%),
+          radial-gradient(circle at 50% 72%, rgba(0, 234, 255, 0.08), transparent 30%),
+          linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 45%, #04070f 100%);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      #particle-field {
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      .scanlines {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        opacity: 0.18;
+        background:
+          repeating-linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.035) 0px,
+            rgba(255, 255, 255, 0.035) 1px,
+            transparent 1px,
+            transparent 4px
+          );
+        mix-blend-mode: screen;
+      }
+
+      .grid-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        opacity: 0.18;
+        background-image:
+          linear-gradient(rgba(56, 242, 255, 0.10) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(56, 242, 255, 0.10) 1px, transparent 1px);
+        background-size: 48px 48px;
+        mask-image: radial-gradient(circle at center, black 35%, transparent 90%);
+      }
+
+      .wrap {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 28px;
+      }
+
+      .hero {
+        width: min(1220px, 100%);
+        display: grid;
+        gap: 22px;
+      }
+
+      .status-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .eyebrow,
+      .status-chip,
+      .meta-chip {
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        background: rgba(7, 13, 23, 0.62);
+        backdrop-filter: blur(12px);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        font-size: 12px;
+        color: var(--muted);
+        box-shadow: var(--shadow-cyan);
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--cyan);
+        box-shadow: 0 0 12px var(--cyan);
+      }
+
+      .status-pack {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+
+      .status-chip {
+        padding: 9px 12px;
+        border-radius: 999px;
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--subtle);
+      }
+
+      .hero-panel {
+        position: relative;
+        overflow: hidden;
+        border-radius: 18px;
+        border: 1px solid rgba(56, 242, 255, 0.16);
+        background:
+          linear-gradient(135deg, rgba(10, 21, 34, 0.96), rgba(6, 12, 20, 0.90)),
+          var(--panel);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), var(--shadow-cyan), var(--shadow-red);
+      }
+
+      .hero-panel::before,
+      .hero-panel::after {
+        content: "";
+        position: absolute;
+        pointer-events: none;
+      }
+
+      .hero-panel::before {
+        inset: 0;
+        background:
+          linear-gradient(90deg, transparent 0%, rgba(56, 242, 255, 0.06) 50%, transparent 100%);
+        transform: translateX(-100%);
+        animation: sweep 7.5s linear infinite;
+      }
+
+      .hero-panel::after {
+        inset: 20px;
+        border: 1px solid rgba(56, 242, 255, 0.09);
+        border-radius: 12px;
+        clip-path: polygon(0 0, calc(100% - 34px) 0, 100% 34px, 100% 100%, 34px 100%, 0 calc(100% - 34px));
+      }
+
+      @keyframes sweep {
+        0% { transform: translateX(-120%); }
+        100% { transform: translateX(120%); }
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.78fr);
+        gap: 0;
+      }
+
+      .hero-main {
+        padding: 54px 48px 44px;
+      }
+
+      .hero-aside {
+        border-left: 1px solid rgba(56, 242, 255, 0.12);
+        background:
+          linear-gradient(180deg, rgba(7, 15, 25, 0.78), rgba(5, 10, 17, 0.96));
+        padding: 34px 30px;
+        display: grid;
+        align-content: center;
+        gap: 18px;
+      }
+
+      .kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--cyan);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+      }
+
+      .kicker::after {
+        content: "";
+        width: 48px;
+        height: 1px;
+        background: linear-gradient(90deg, var(--cyan), transparent);
+      }
+
+      h1 {
+        margin: 18px 0 0;
+        font-size: clamp(3.6rem, 9vw, 8rem);
+        line-height: 0.88;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        text-shadow:
+          0 0 24px rgba(56, 242, 255, 0.18),
+          0 0 54px rgba(255, 52, 95, 0.14);
+      }
+
+      .glitch {
+        position: relative;
+        display: inline-block;
+        animation: glitch-skew 4s ease-in-out infinite;
+      }
+
+      .glitch::before,
+      .glitch::after {
+        content: attr(data-text);
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.8;
+      }
+
+      .glitch::before {
+        color: var(--cyan);
+        transform: translate(3px, 0);
+        clip-path: inset(0 0 58% 0);
+        animation: glitch-shift-1 2.2s steps(2, end) infinite;
+      }
+
+      .glitch::after {
+        color: var(--red);
+        transform: translate(-3px, 0);
+        clip-path: inset(46% 0 0 0);
+        animation: glitch-shift-2 2.8s steps(2, end) infinite;
+      }
+
+      @keyframes glitch-skew {
+        0%, 100% { transform: skewX(0deg); }
+        4% { transform: skewX(1deg); }
+        5% { transform: skewX(-1deg); }
+        6% { transform: skewX(0deg); }
+      }
+
+      @keyframes glitch-shift-1 {
+        0%, 86%, 100% { transform: translate(3px, 0); }
+        88% { transform: translate(7px, -1px); }
+        90% { transform: translate(-2px, 1px); }
+      }
+
+      @keyframes glitch-shift-2 {
+        0%, 82%, 100% { transform: translate(-3px, 0); }
+        84% { transform: translate(-7px, 1px); }
+        86% { transform: translate(2px, -1px); }
+      }
+
+      .subtitle {
+        max-width: 760px;
+        margin: 18px 0 0;
+        font-size: clamp(1rem, 1.7vw, 1.18rem);
+        line-height: 1.7;
+        color: var(--muted);
+      }
+
+      .cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: stretch;
+        margin-top: 28px;
+      }
+
+      .btn {
+        position: relative;
+        isolation: isolate;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-width: 230px;
+        padding: 17px 24px;
+        border-radius: 14px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 900;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+        overflow: hidden;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+      }
+
+      .btn::before,
+      .btn::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .btn::before {
+        background: linear-gradient(115deg, transparent 18%, rgba(255,255,255,0.2) 50%, transparent 82%);
+        transform: translateX(-125%);
+        transition: transform 0.42s ease;
+        z-index: -1;
+      }
+
+      .btn:hover::before {
+        transform: translateX(125%);
+      }
+
+      .btn::after {
+        opacity: 0;
+        z-index: -1;
+      }
+
+      .btn-primary {
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: linear-gradient(135deg, #ff254f 0%, #ff5b2e 35%, #ff0a54 68%, #ff41c6 100%);
+        box-shadow: 0 0 0 1px rgba(255, 52, 95, 0.18), 0 0 30px rgba(255, 52, 95, 0.34);
+      }
+
+      .btn-primary::after {
+        opacity: 1;
+        background:
+          linear-gradient(90deg, transparent 0 10%, rgba(255,255,255,0.12) 10% 12%, transparent 12% 20%, rgba(255,255,255,0.08) 20% 21%, transparent 21% 100%);
+        mix-blend-mode: screen;
+      }
+
+      .btn-primary:hover {
+        box-shadow:
+          0 0 0 1px rgba(56, 242, 255, 0.22),
+          0 0 28px rgba(255, 52, 95, 0.42),
+          0 0 54px rgba(56, 242, 255, 0.24);
+      }
+
+      .btn-primary:hover .btn-text {
+        animation: glitch-btn 320ms steps(2, end) 1;
+      }
+
+      @keyframes glitch-btn {
+        0% { transform: translate(0, 0); text-shadow: none; }
+        25% { transform: translate(1px, -1px); text-shadow: 2px 0 var(--cyan), -2px 0 var(--red); }
+        50% { transform: translate(-1px, 1px); text-shadow: -3px 0 var(--cyan), 3px 0 var(--red); }
+        100% { transform: translate(0, 0); text-shadow: none; }
+      }
+
+      .btn-secondary {
+        color: var(--cyan);
+        border: 1px solid rgba(56, 242, 255, 0.42);
+        background: rgba(8, 18, 31, 0.82);
+        box-shadow: inset 0 0 0 1px rgba(56, 242, 255, 0.08), 0 0 22px rgba(56, 242, 255, 0.16);
+      }
+
+      .btn-secondary:hover {
+        background: rgba(10, 24, 41, 0.94);
+        box-shadow: inset 0 0 0 1px rgba(56, 242, 255, 0.16), 0 0 28px rgba(56, 242, 255, 0.24);
+      }
+
+      .hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 22px;
+      }
+
+      .meta-chip {
+        padding: 10px 12px;
+        border-radius: 999px;
+        color: var(--subtle);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .aside-label {
+        color: var(--cyan);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+
+      .aside-head {
+        margin: 0;
+        font-size: clamp(1.5rem, 3vw, 2.3rem);
+        line-height: 1.04;
+        text-transform: uppercase;
+      }
+
+      .aside-copy {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.98rem;
+        line-height: 1.7;
+      }
+
+      .feature-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .feature {
+        position: relative;
+        padding: 14px 14px 14px 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(56, 242, 255, 0.12);
+        background: rgba(9, 17, 28, 0.8);
+      }
+
+      .feature::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 10px;
+        bottom: 10px;
+        width: 2px;
+        background: linear-gradient(180deg, var(--cyan), transparent 85%);
+      }
+
+      .feature-title {
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--cyan);
+        font-weight: 800;
+      }
+
+      .feature-copy {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.55;
+      }
+
+      .footer-note {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding: 16px 2px 0;
+        color: var(--subtle);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .footer-note strong {
+        color: var(--text);
+      }
+
+      @media (max-width: 960px) {
+        .hero-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-aside {
+          border-left: 0;
+          border-top: 1px solid rgba(56, 242, 255, 0.12);
+        }
+      }
+
+      @media (max-width: 640px) {
+        .wrap {
+          padding: 16px;
+        }
+
+        .hero-main,
+        .hero-aside {
+          padding: 28px 20px;
+        }
+
+        .status-row {
+          justify-content: center;
+        }
+
+        .status-pack {
+          justify-content: center;
+        }
+
+        .cta-row {
+          flex-direction: column;
+        }
+
+        .btn {
+          width: 100%;
+          min-width: 0;
+        }
+
+        .footer-note {
+          font-size: 11px;
+          letter-spacing: 0.08em;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module">
-      import React from 'react';
-      import ReactDOM from 'react-dom/client';
-      import App from './main.jsx';
+    <canvas id="particle-field"></canvas>
+    <div class="scanlines" aria-hidden="true"></div>
+    <div class="grid-overlay" aria-hidden="true"></div>
 
-      ReactDOM.createRoot(document.getElementById('root')).render(
-        React.createElement(App)
-      );
+    <main class="wrap">
+      <section class="hero">
+        <div class="status-row">
+          <div class="eyebrow">CSEMTV Live System</div>
+          <div class="status-pack">
+            <div class="status-chip">Realtime VRS</div>
+            <div class="status-chip">Event Builder</div>
+            <div class="status-chip">Demo Online</div>
+          </div>
+        </div>
+
+        <div class="hero-panel">
+          <div class="hero-grid">
+            <div class="hero-main">
+              <div class="kicker">Counter-Strike 2 Event Manager</div>
+              <h1 class="glitch" data-text="CSEMTV">CSEMTV</h1>
+              <p class="subtitle">
+                Build tournaments, track rankings, simulate schedules, and push a full CS event ecosystem through a brutal cyber-styled control surface.
+              </p>
+
+              <div class="cta-row">
+                <a class="btn btn-primary" href="./downloads/CS_Manager_Setup.exe" download>
+                  <span class="btn-text">Download Full Build</span>
+                </a>
+                <a class="btn btn-secondary" href="./play.html">
+                  <span class="btn-text">Play Demo</span>
+                </a>
+              </div>
+
+              <div class="hero-meta">
+                <span class="meta-chip">Rankings Engine</span>
+                <span class="meta-chip">Tournament Calendar</span>
+                <span class="meta-chip">Heat Economy</span>
+                <span class="meta-chip">LetUsGuess</span>
+              </div>
+            </div>
+
+            <aside class="hero-aside">
+              <div class="aside-label">System Feed</div>
+              <h2 class="aside-head">Operate the entire circuit.</h2>
+              <p class="aside-copy">
+                From Major slot logic to live match simulation, this build turns event management into a high-pressure control room.
+              </p>
+
+              <div class="feature-list">
+                <div class="feature">
+                  <div class="feature-title">Format Layer</div>
+                  <div class="feature-copy">Major, IEM, EWC, BLAST, EPL with stage-specific bracket generation.</div>
+                </div>
+                <div class="feature">
+                  <div class="feature-title">Economic Loop</div>
+                  <div class="feature-copy">Prize cost, heat recovery, VRS movement, and stamina-based invite acceptance.</div>
+                </div>
+                <div class="feature">
+                  <div class="feature-title">Live Simulation</div>
+                  <div class="feature-copy">Daily progression, map-level scorelines, round history, and next-day prediction flow.</div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+
+        <div class="footer-note">
+          <span>Entry: <strong>index.html</strong></span>
+          <span>Demo: <strong>play.html</strong></span>
+          <span>Installer: <strong>downloads/CS_Manager_Setup.exe</strong></span>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      (() => {
+        const canvas = document.getElementById('particle-field');
+        const ctx = canvas.getContext('2d', { alpha: true });
+        let width = 0;
+        let height = 0;
+        let dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const pointer = { x: 0, y: 0, active: false };
+        const particles = [];
+
+        function random(min, max) {
+          return Math.random() * (max - min) + min;
+        }
+
+        function particleCount() {
+          return Math.max(90, Math.min(190, Math.floor(window.innerWidth / 10)));
+        }
+
+        function resize() {
+          dpr = Math.min(window.devicePixelRatio || 1, 2);
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvas.width = Math.floor(width * dpr);
+          canvas.height = Math.floor(height * dpr);
+          canvas.style.width = width + "px";
+          canvas.style.height = height + "px";
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function createParticle() {
+          return {
+            x: random(0, width),
+            y: random(0, height),
+            vx: random(-0.24, 0.24),
+            vy: random(-0.16, 0.16),
+            radius: random(1.1, 2.4),
+            alpha: random(0.45, 1),
+            pulse: random(0, Math.PI * 2),
+            tone: Math.random() > 0.65 ? "red" : "cyan"
+          };
+        }
+
+        function initParticles() {
+          particles.length = 0;
+          const count = particleCount();
+          for (let i = 0; i < count; i++) {
+            particles.push(createParticle());
+          }
+        }
+
+        function glow(x, y, radius, tone, alpha) {
+          const color = tone === "red"
+            ? ["rgba(255,52,95," + alpha + ")", "rgba(255,52,95,0)"]
+            : ["rgba(56,242,255," + alpha + ")", "rgba(56,242,255,0)"];
+
+          const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius * 5);
+          gradient.addColorStop(0, color[0]);
+          gradient.addColorStop(1, color[1]);
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(x, y, radius * 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        function moveParticle(p, time) {
+          const driftX = Math.sin(time * 0.00065 + p.pulse) * 0.12;
+          const driftY = Math.cos(time * 0.00048 + p.pulse) * 0.09;
+          p.x += p.vx + driftX;
+          p.y += p.vy + driftY;
+
+          if (pointer.active) {
+            const dx = p.x - pointer.x;
+            const dy = p.y - pointer.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 165) {
+              const force = (165 - dist) / 165;
+              const push = force * force * 4.4;
+              p.x += (dx / (dist || 1)) * push;
+              p.y += (dy / (dist || 1)) * push;
+            }
+          }
+
+          if (p.x < -30) p.x = width + 30;
+          if (p.x > width + 30) p.x = -30;
+          if (p.y < -30) p.y = height + 30;
+          if (p.y > height + 30) p.y = -30;
+        }
+
+        function drawParticle(p, time) {
+          const pulseScale = 0.55 + (Math.sin(time * 0.002 + p.pulse) + 1) * 0.25;
+          const radius = p.radius * pulseScale;
+          glow(p.x, p.y, radius, p.tone, 0.22 * p.alpha);
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((time * 0.00015 + p.pulse) % (Math.PI * 2));
+          ctx.strokeStyle = p.tone === "red" ? "rgba(255,52,95,0.88)" : "rgba(56,242,255,0.9)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(-radius * 2.4, 0);
+          ctx.lineTo(radius * 2.4, 0);
+          ctx.moveTo(0, -radius * 2.4);
+          ctx.lineTo(0, radius * 2.4);
+          ctx.stroke();
+          ctx.restore();
+
+          ctx.fillStyle = p.tone === "red" ? "rgba(255,179,192,0.92)" : "rgba(219,251,255,0.96)";
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, Math.max(0.8, radius * 0.9), 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        function connectParticles() {
+          const maxDist = 150;
+          for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+              const a = particles[i];
+              const b = particles[j];
+              const dx = a.x - b.x;
+              const dy = a.y - b.y;
+              const dist = Math.hypot(dx, dy);
+              if (dist > maxDist) continue;
+
+              const alpha = (1 - dist / maxDist) * 0.34;
+              const midX = (a.x + b.x) * 0.5;
+              const midY = (a.y + b.y) * 0.5;
+              const pointerBoost = pointer.active ? Math.max(0, 1 - Math.hypot(midX - pointer.x, midY - pointer.y) / 220) : 0;
+              const lineAlpha = alpha + pointerBoost * 0.25;
+              const gradient = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+              gradient.addColorStop(0, a.tone === "red" ? "rgba(255,52,95," + lineAlpha + ")" : "rgba(56,242,255," + lineAlpha + ")");
+              gradient.addColorStop(0.5, pointerBoost > 0 ? "rgba(255,255,255," + Math.min(0.65, lineAlpha + 0.18) + ")" : "rgba(94,220,255," + Math.min(0.48, lineAlpha) + ")");
+              gradient.addColorStop(1, b.tone === "red" ? "rgba(255,52,95," + lineAlpha + ")" : "rgba(56,242,255," + lineAlpha + ")");
+
+              ctx.strokeStyle = gradient;
+              ctx.lineWidth = dist < 70 ? 1.25 : 0.72;
+              ctx.beginPath();
+              ctx.moveTo(a.x, a.y);
+              ctx.lineTo(b.x, b.y);
+              ctx.stroke();
+            }
+          }
+        }
+
+        function frame(time) {
+          ctx.clearRect(0, 0, width, height);
+          ctx.fillStyle = "rgba(2, 5, 10, 0.18)";
+          ctx.fillRect(0, 0, width, height);
+
+          for (const particle of particles) {
+            moveParticle(particle, time);
+            drawParticle(particle, time);
+          }
+
+          connectParticles();
+          requestAnimationFrame(frame);
+        }
+
+        window.addEventListener("resize", () => {
+          resize();
+          initParticles();
+        });
+
+        window.addEventListener("mousemove", (event) => {
+          pointer.x = event.clientX;
+          pointer.y = event.clientY;
+          pointer.active = true;
+        });
+
+        window.addEventListener("mouseleave", () => {
+          pointer.active = false;
+        });
+
+        window.addEventListener("touchstart", (event) => {
+          const touch = event.touches[0];
+          if (!touch) return;
+          pointer.x = touch.clientX;
+          pointer.y = touch.clientY;
+          pointer.active = true;
+        }, { passive: true });
+
+        window.addEventListener("touchmove", (event) => {
+          const touch = event.touches[0];
+          if (!touch) return;
+          pointer.x = touch.clientX;
+          pointer.y = touch.clientY;
+          pointer.active = true;
+        }, { passive: true });
+
+        window.addEventListener("touchend", () => {
+          pointer.active = false;
+        }, { passive: true });
+
+        resize();
+        initParticles();
+        requestAnimationFrame(frame);
+      })();
     </script>
   </body>
 </html>
