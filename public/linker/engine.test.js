@@ -1,6 +1,9 @@
 'use strict';
 const assert = require('node:assert/strict');
 const E = require('./engine.js');
+const C = require('./codec.js');
+const F = require('./team_info.js');
+(async () => {
 let assertions = 0;
 function check(value, message) { assert.ok(value, message); assertions++; }
 function equal(a, b, message) { assert.deepEqual(a, b, message); assertions++; }
@@ -15,7 +18,7 @@ check(!run.results.has('a0') && !run.starts.has('s2'), 'preview never fills resu
 check(E.step(doc, state, 't1').ok);
 run = E.derive(doc, state);
 equal(run.results.get('a0').id, 't1');
-equal(run.results.get('e0').id, 't8');
+check(!run.results.has('e0'), 'merged result group waits for all its confirmed inputs');
 check(!run.outputs.has('result:a0') && !run.starts.has('s2'), 'advance waits for whole result layer');
 for (let i = 0; i < 3; i++) check(E.step(doc, state).ok);
 run = E.derive(doc, state);
@@ -45,7 +48,8 @@ const finalAdvance = E.copy(doc); finalAdvance.results.find(r => r.id === 'p1').
 equal(E.parse(JSON.stringify(doc)), doc, '.csem round trip preserves graph');
 assert.throws(() => E.parse('{"schema":"unknown"}')); assertions++;
 assert.throws(() => E.parse(JSON.stringify({ ...doc, matches: null }))); assertions++;
-const fifoDoc = E.parse(require('node:fs').readFileSync(`${__dirname}/fifo_queue.csem`, 'utf8'));
+const fifoTeams = F.parseTeamInfo(await C.decode(require('node:fs').readFileSync(`${__dirname}/fifo_queue.tinf`), 'teams'));
+const fifoDoc = F.readSchedule(await C.decode(require('node:fs').readFileSync(`${__dirname}/fifo_queue.csem`)), fifoTeams);
 equal(E.validate(fifoDoc), [], 'FIFO regression fixture is a valid graph');
 equal(E.createState(fifoDoc).queue, ['first1', 'first2', 'first3', 'first4'], 'document-aware initialization enqueues all initial confirmed matches');
 const fifoState = E.createState();
@@ -86,3 +90,4 @@ check(E.backStep(doc, crossStageState));
 equal(crossStageState.queue, ['q4'], 'cross-stage undo restores old stage queue');
 equal(E.derive(doc, crossStageState).activeStage, 's1');
 console.log(`Graph engine: ${assertions} assertions passed.`);
+})().catch(error => { console.error(error); process.exitCode = 1; });

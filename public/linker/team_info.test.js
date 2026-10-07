@@ -1,0 +1,51 @@
+'use strict';
+const assert = require('node:assert/strict'), fs = require('node:fs'), zlib = require('node:zlib');
+const E = require('./engine.js'), C = require('./codec.js'), F = require('./team_info.js');
+let assertions = 0;
+const equal = (a,b,m) => { assert.deepEqual(a,b,m); assertions++; };
+const check = (v,m) => { assert.ok(v,m); assertions++; };
+const reject = async (p,re) => { await assert.rejects(p,re); assertions++; };
+const invalid = (data,re) => { assert.throws(() => F.parseTeamInfo(JSON.stringify(data)),re); assertions++; };
+(async () => {
+  const original = E.sample(), teams = F.fromLegacy(original), schedule = F.toSchedule(original);
+  equal(schedule.version,3); equal(schedule.seeds,original.seeds.map(t=>({id:t.id})));
+  for(const field of ['stages','matches','results','groups','links','appearance']) equal(schedule[field],original[field],`${field} preserved`);
+  equal(teams.teams.map(t=>[t.id,t.name,t.seedRank,t.liveRank]),original.seeds.map(t=>[t.id,t.name,t.seedRank,t.liveRank]));
+  check(teams.teams.every(t=>['region','vrs','stamina','wins','losses','prize_total','honors'].every(k=>t[k]===null)),'unknown source fields stay unknown');
+  equal(teams.current_date,null,'do not invent a historical date');
+  const rich=E.copy(teams);Object.assign(rich.teams[0],{region:'EU',vrs:1200,stamina:75,wins:10,losses:4,prize_total:'9223372036854775807',honors:[{tour_id:1,name:'T',date:'2024-03-31',prize:100,tier:'S',format:'major',placement:1,vrs_before:1000,vrs_after:1200,delta_vrs:200}]});
+  equal(F.parseTeamInfo(JSON.stringify(rich)),rich,'all TeamData fields and int64 precision preserved');
+  const alias=E.copy(rich);alias.teams[0].historical_honors=alias.teams[0].honors;delete alias.teams[0].honors;
+  equal(F.parseTeamInfo(JSON.stringify(alias)).teams[0].honors,rich.teams[0].honors,'historical_honors alias accepted');
+  for(const [key,value,re] of [['id','bad:id',/ID/],['name','',/名称/],['region',3,/赛区/],['vrs',-1,/vrs/],['stamina',101,/stamina/],['wins',1.5,/wins/],['losses','0',/losses/],['prize_total','9223372036854775808',/int64/],['honors',['wrong'],/荣誉/],['seedRank',0,/排名/],['liveRank',-1,/排名/]]) { const bad=E.copy(rich);bad.teams[0][key]=value;invalid(bad,re); }
+  const duplicate=E.copy(teams);duplicate.teams.push(duplicate.teams[0]);invalid(duplicate,/重复/);
+  const overflow=E.copy(teams);overflow.teams[0].vrs=2147483648;invalid(overflow,/vrs/);
+  const missingField=E.copy(teams);delete missingField.teams[0].stamina;invalid(missingField,/stamina/);
+  const wrongSchema=E.copy(teams);wrongSchema.schema='csem.graph-linker';invalid(wrongSchema,/类型/);
+  const bytes=await C.encode(schedule), tbytes=await C.encode(rich,'teams');
+  equal(C.identify(bytes).magic,C.SCHEDULE_MAGIC);equal(C.identify(tbytes).magic,C.TEAM_MAGIC);
+  equal(JSON.parse(await C.decode(bytes)),schedule);equal(F.parseTeamInfo(await C.decode(tbytes,'teams')),rich);
+  await reject(C.decode(tbytes),/用途不匹配.*tinf.*csem/);await reject(C.decode(bytes,'teams'),/用途不匹配.*csem.*tinf/);
+  await reject(C.decode(Buffer.concat([Buffer.from(C.TEAM_MAGIC),Buffer.from('not gzip')]),'schedule'),/用途不匹配/);
+  await reject(C.decode(Buffer.from('CSEM-TEAM-INFO/99\n'),'teams'),/版本不支持/);
+  await reject(C.decode(Buffer.from(JSON.stringify(teams)),'teams'),/识别码/);
+  await reject(C.decode(tbytes.subarray(0,tbytes.length-5),'teams'),/损坏/);
+  await reject(C.decode(Buffer.concat([Buffer.from(C.TEAM_MAGIC),zlib.gzipSync(JSON.stringify(schedule))]),'teams'),/识别码与内容/);
+  await reject(C.decode(Buffer.concat([Buffer.from(C.TEAM_MAGIC),zlib.gzipSync('x'.repeat(C.LIMIT+1))]),'teams'),/2 MB/);
+  await reject(C.decode(Buffer.concat([Buffer.from(C.TEAM_MAGIC),zlib.gzipSync(Buffer.from([0xff]))]),'teams'),/编码/);
+  const unloaded=F.readSchedule(JSON.stringify(schedule));equal(E.validate(unloaded).filter(i=>i.code==='TEAM_MISSING').length,8);check(!E.step(unloaded,E.createState(unloaded)).ok,'unresolved names cannot simulate');
+  const loaded=F.readSchedule(JSON.stringify(schedule),teams);equal(loaded,original);equal(E.validate(loaded),[]);
+  equal(F.bindTeams(unloaded,teams),loaded,'schedule first or teams first produce same model');
+  const partial=E.copy(teams);partial.teams.pop();equal(E.validate(F.bindTeams(loaded,partial)).filter(i=>i.code==='TEAM_MISSING').length,1);
+  const extras=E.copy(teams);extras.teams.push({...extras.teams[0],id:'extra'});equal(F.bindTeams(loaded,extras),loaded,'extra database teams do not change schedule');
+  const injection=E.copy(schedule);injection.seeds[0].name='inline';assert.throws(()=>F.readSchedule(JSON.stringify(injection),teams),/只能保存战队 ID/);assertions++;
+  const badHint=E.copy(schedule);badHint.teamInfoFile={file:'wrong'};assert.throws(()=>F.readSchedule(JSON.stringify(badHint),teams),/文件名称/);assertions++;
+  const changed=E.copy(teams);changed.teams[0].name='Authoritative file name';
+  equal(F.readSchedule(await C.decode(await C.encode(original)),changed).seeds[0].name,'Authoritative file name','legacy embedded team names never replace the imported database');
+  const state=E.createState(loaded);for(let i=0;i<8;i++)check(E.step(loaded,state).ok);check(E.derive(loaded,state).complete,'separated sample completes across stages');
+  for(const name of ['sample','fifo_queue','group_demo','group_fifo']) {
+    const s=JSON.parse(await C.decode(fs.readFileSync(`${__dirname}/${name}.csem`))),t=F.parseTeamInfo(await C.decode(fs.readFileSync(`${__dirname}/${name}.tinf`),'teams'));
+    equal(s.version,3);check(s.seeds.every(ref=>Object.keys(ref).join()==='id'));equal(E.validate(F.readSchedule(JSON.stringify(s),t)),[]);
+  }
+  console.log(`Team files: ${assertions} assertions passed.`);
+})().catch(e=>{console.error(e);process.exitCode=1;});

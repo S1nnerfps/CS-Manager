@@ -2,6 +2,13 @@
 
 你也看CS？看腻了固有的比赛？等烦了主办方发布比赛？现在机会就在你眼前！
 
+## Release Version 0.14
+
+- 同步 Graph Linker v0.3，继续通过主页 `View Event Editor` 按钮访问 `/linker`。
+- 新增大框、仅标签大框、批量编辑、内部复制/剪切/粘贴以及撤销/重做。
+- 赛程使用压缩 `.csem` v3，战队资料独立为只读 `.tinf` 文件；支持旧赛程与浏览器草稿迁移。
+- 同步完整示例、文件格式说明及五组回归测试。默认示例需先导入 `sample.tinf`；Copenhagen 示例配套使用 `Cphg2024.csem` 和 `Cphg2024.tinf`。
+
 ## Release Version 0.12
 
 - 重做了主页面，加入 Windows 桌面程序项目的下载，并将原网页内容放入子页面。

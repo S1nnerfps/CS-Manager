@@ -17,7 +17,7 @@ G.syncAdvanceLinks(doc, makeId);
 equal(doc.links.filter(l => l.source.startsWith('result:')).map(l => [l.source, l.target]), ['a0', 'a1', 'a2', 'a3'].map(id => [`result:${id}`, 'start:s2']), 'creating next stage wires all advance slots');
 const synced = E.copy(doc); G.syncAdvanceLinks(doc, makeId);
 equal(doc, synced, 'auto wiring is idempotent and preserves IDs');
-doc.results.find(r => r.id === 'e0').kind = 'advance'; G.syncAdvanceLinks(doc, makeId);
+G.setResultKind(doc, [{ kind: 'result', id: 'e0' }], 'advance'); G.syncAdvanceLinks(doc, makeId);
 check(doc.links.some(l => l.source === 'result:e0' && l.target === 'start:s2'), 'new advance type auto wires when next stage already exists');
 check(E.validate(doc).some(i => i.code === 'START_SIZE'), 'auto routes do not silently change existing target capacity');
 doc.results.find(r => r.id === 'a0').kind = 'placement'; G.syncAdvanceLinks(doc, makeId);
@@ -54,7 +54,7 @@ plan = G.planConnections(overflow, ['match:q1:win', 'match:q2:win', 'match:q3:wi
 
 equal(G.GRID, G.RESULT_WIDTH / 10, 'grid derives from result width');
 equal(G.snap(44), 47); equal(G.snap(73), 70.5);
-equal(G.snapPosition(-90, -1), { x: 352.5, y: 23.5 }, 'boundary stays on grid');
+equal(G.snapPosition(-90, -1), { x: 23.5, y: 23.5 }, 'boundary stays on grid and permits start-layer movement');
 equal(G.snapPosition(441, 63), { x: 446.5, y: 70.5 });
 for (const kind of ['match', 'result']) {
   equal(G.SPAWN[kind].x % G.GRID, 0, 'fixed spawn x on grid');

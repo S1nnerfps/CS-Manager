@@ -3,6 +3,6 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "test": "node engine.test.js && node editor.test.js"
+    "test": "node engine.test.js && node editor.test.js && node features.test.js && node ui.test.js && node team_info.test.js"
   }
 }

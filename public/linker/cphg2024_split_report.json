@@ -1,0 +1,27 @@
+{
+  "source": "C:/Users/20317/Downloads/Copenhagen 2024.csem",
+  "sourceSHA256": "8fef25c3b53710413334c762a6c7e61bb741101801a62ac5489f86bf850ae244",
+  "sourceBytes": 6933,
+  "scheduleBytes": 6660,
+  "teamInfoBytes": 630,
+  "teamCount": 24,
+  "stageCount": 3,
+  "matchCount": 73,
+  "resultCount": 40,
+  "groupCount": 34,
+  "linkCount": 226,
+  "issues": [],
+  "simulatedMatches": 73,
+  "complete": true,
+  "sourceUnchanged": true,
+  "unknownFields": [
+    "region",
+    "vrs",
+    "stamina",
+    "wins",
+    "losses",
+    "prize_total",
+    "honors",
+    "current_date"
+  ]
+}
