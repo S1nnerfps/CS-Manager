@@ -1,0 +1,334 @@
+{
+  "schema": "csem.graph-linker",
+  "version": 1,
+  "name": "FIFO 回归 · 下游先创建后就绪",
+  "appearance": {
+    "unresolved": "#183757",
+    "winner": "#254d44",
+    "loser": "#622a37"
+  },
+  "seeds": [
+    {
+      "id": "t1",
+      "name": "Team 1",
+      "seedRank": 1,
+      "liveRank": 0
+    },
+    {
+      "id": "t2",
+      "name": "Team 2",
+      "seedRank": 2,
+      "liveRank": 0
+    },
+    {
+      "id": "t3",
+      "name": "Team 3",
+      "seedRank": 3,
+      "liveRank": 0
+    },
+    {
+      "id": "t4",
+      "name": "Team 4",
+      "seedRank": 4,
+      "liveRank": 0
+    },
+    {
+      "id": "t5",
+      "name": "Team 5",
+      "seedRank": 5,
+      "liveRank": 0
+    },
+    {
+      "id": "t6",
+      "name": "Team 6",
+      "seedRank": 6,
+      "liveRank": 0
+    },
+    {
+      "id": "t7",
+      "name": "Team 7",
+      "seedRank": 7,
+      "liveRank": 0
+    },
+    {
+      "id": "t8",
+      "name": "Team 8",
+      "seedRank": 8,
+      "liveRank": 0
+    }
+  ],
+  "stages": [
+    {
+      "id": "s1",
+      "name": "FIFO 队列验证",
+      "size": 8,
+      "sort": [
+        {
+          "key": "seedRank",
+          "direction": "asc"
+        },
+        {
+          "key": "",
+          "direction": "asc"
+        },
+        {
+          "key": "",
+          "direction": "asc"
+        }
+      ]
+    }
+  ],
+  "matches": [
+    {
+      "id": "downstream",
+      "name": "下游赛（较早创建）",
+      "stage": "s1",
+      "bo": 3,
+      "schedule": "YYYY-MM-DD #X",
+      "x": 799,
+      "y": 47
+    },
+    {
+      "id": "first1",
+      "name": "首轮 A",
+      "stage": "s1",
+      "bo": 3,
+      "schedule": "YYYY-MM-DD #X",
+      "x": 423,
+      "y": 47
+    },
+    {
+      "id": "first2",
+      "name": "首轮 B",
+      "stage": "s1",
+      "bo": 3,
+      "schedule": "YYYY-MM-DD #X",
+      "x": 423,
+      "y": 211.5
+    },
+    {
+      "id": "first3",
+      "name": "首轮 C",
+      "stage": "s1",
+      "bo": 3,
+      "schedule": "YYYY-MM-DD #X",
+      "x": 423,
+      "y": 376
+    },
+    {
+      "id": "first4",
+      "name": "首轮 D",
+      "stage": "s1",
+      "bo": 3,
+      "schedule": "YYYY-MM-DD #X",
+      "x": 423,
+      "y": 540.5
+    }
+  ],
+  "results": [
+    {
+      "id": "p1",
+      "name": "最终第 1 名",
+      "kind": "placement",
+      "rank": 1,
+      "stage": "s1",
+      "x": 1198.5,
+      "y": 47
+    },
+    {
+      "id": "p2",
+      "name": "最终第 2 名",
+      "kind": "placement",
+      "rank": 2,
+      "stage": "s1",
+      "x": 1198.5,
+      "y": 117.5
+    },
+    {
+      "id": "p3",
+      "name": "最终第 3 名",
+      "kind": "placement",
+      "rank": 3,
+      "stage": "s1",
+      "x": 1198.5,
+      "y": 188
+    },
+    {
+      "id": "p4",
+      "name": "最终第 4 名",
+      "kind": "placement",
+      "rank": 4,
+      "stage": "s1",
+      "x": 1198.5,
+      "y": 258.5
+    },
+    {
+      "id": "p5",
+      "name": "最终第 5 名",
+      "kind": "placement",
+      "rank": 5,
+      "stage": "s1",
+      "x": 1198.5,
+      "y": 329
+    },
+    {
+      "id": "p6",
+      "name": "最终第 6 名",
+      "kind": "placement",
+      "rank": 6,
+      "stage": "s1",
+      "x": 1198.5,
+      "y": 399.5
+    },
+    {
+      "id": "p7",
+      "name": "最终第 7 名",
+      "kind": "placement",
+      "rank": 7,
+      "stage": "s1",
+      "x": 1198.5,
+      "y": 470
+    },
+    {
+      "id": "p8",
+      "name": "最终第 8 名",
+      "kind": "placement",
+      "rank": 8,
+      "stage": "s1",
+      "x": 1198.5,
+      "y": 540.5
+    }
+  ],
+  "links": [
+    {
+      "id": "edge1",
+      "source": "seed:t1",
+      "target": "start:s1"
+    },
+    {
+      "id": "edge2",
+      "source": "start:s1:0",
+      "target": "match:first1"
+    },
+    {
+      "id": "edge3",
+      "source": "seed:t2",
+      "target": "start:s1"
+    },
+    {
+      "id": "edge4",
+      "source": "start:s1:1",
+      "target": "match:first1"
+    },
+    {
+      "id": "edge5",
+      "source": "seed:t3",
+      "target": "start:s1"
+    },
+    {
+      "id": "edge6",
+      "source": "start:s1:2",
+      "target": "match:first2"
+    },
+    {
+      "id": "edge7",
+      "source": "seed:t4",
+      "target": "start:s1"
+    },
+    {
+      "id": "edge8",
+      "source": "start:s1:3",
+      "target": "match:first2"
+    },
+    {
+      "id": "edge9",
+      "source": "seed:t5",
+      "target": "start:s1"
+    },
+    {
+      "id": "edge10",
+      "source": "start:s1:4",
+      "target": "match:first3"
+    },
+    {
+      "id": "edge11",
+      "source": "seed:t6",
+      "target": "start:s1"
+    },
+    {
+      "id": "edge12",
+      "source": "start:s1:5",
+      "target": "match:first3"
+    },
+    {
+      "id": "edge13",
+      "source": "seed:t7",
+      "target": "start:s1"
+    },
+    {
+      "id": "edge14",
+      "source": "start:s1:6",
+      "target": "match:first4"
+    },
+    {
+      "id": "edge15",
+      "source": "seed:t8",
+      "target": "start:s1"
+    },
+    {
+      "id": "edge16",
+      "source": "start:s1:7",
+      "target": "match:first4"
+    },
+    {
+      "id": "edge17",
+      "source": "match:first1:win",
+      "target": "match:downstream"
+    },
+    {
+      "id": "edge18",
+      "source": "match:first2:win",
+      "target": "match:downstream"
+    },
+    {
+      "id": "edge19",
+      "source": "match:downstream:win",
+      "target": "result:p1"
+    },
+    {
+      "id": "edge20",
+      "source": "match:downstream:lose",
+      "target": "result:p2"
+    },
+    {
+      "id": "edge21",
+      "source": "match:first3:win",
+      "target": "result:p3"
+    },
+    {
+      "id": "edge22",
+      "source": "match:first3:lose",
+      "target": "result:p4"
+    },
+    {
+      "id": "edge23",
+      "source": "match:first4:win",
+      "target": "result:p5"
+    },
+    {
+      "id": "edge24",
+      "source": "match:first4:lose",
+      "target": "result:p6"
+    },
+    {
+      "id": "edge25",
+      "source": "match:first1:lose",
+      "target": "result:p7"
+    },
+    {
+      "id": "edge26",
+      "source": "match:first2:lose",
+      "target": "result:p8"
+    }
+  ]
+}

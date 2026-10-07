@@ -5,6 +5,15 @@
 ## Release Version 0.12
 
 - 重做了主页面，加入 Windows 桌面程序项目的下载，并将原网页内容放入子页面。
+- 主页新增 `View Event Editor` 按钮，打开 `/linker` 赛制编辑器。
+
+### Event Editor 子网页
+
+Graph Linker 项目已从 `E:/CSEM_Developer_GraphLinker` 复制到 `public/linker/`，包含编辑器源码、示例赛制、测试和说明文档。访问 `/linker` 或 `/linker/` 即可使用；原有试玩页面仍为 `/play.html`。
+
+运行 `npm run dev` 开发，或运行 `npm run build` 后使用 `npm run preview` 检查构建结果。Vercel 路由已在 `vercel.json` 配置；其他静态托管平台需将 `/linker` 映射至 `/linker/index.html`，资源目录为 `/linker/`。
+
+运行 `npm test --prefix public/linker` 可验证赛制引擎和编辑逻辑。
 
 ## Beta Version 0.11
 

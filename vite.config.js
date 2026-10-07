@@ -7,6 +7,26 @@ import react from '@vitejs/plugin-react'
 const rootDir = fileURLToPath(new URL('.', import.meta.url))
 const downloadsDir = path.resolve(rootDir, 'downloads')
 
+function linkerRoutePlugin() {
+  const rewrite = (req, _res, next) => {
+    const pathname = req.url?.split('?')[0]
+    if (pathname === '/linker' || pathname === '/linker/') {
+      req.url = req.url.replace(pathname, '/linker/index.html')
+    }
+    next()
+  }
+
+  return {
+    name: 'linker-route',
+    configureServer(server) {
+      server.middlewares.use(rewrite)
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(rewrite)
+    },
+  }
+}
+
 function downloadsPlugin() {
   return {
     name: 'downloads-static',
@@ -52,7 +72,7 @@ function downloadsPlugin() {
 }
 
 export default defineConfig({
-  plugins: [react(), downloadsPlugin()],
+  plugins: [react(), linkerRoutePlugin(), downloadsPlugin()],
   build: {
     rollupOptions: {
       input: {

@@ -1,0 +1,8 @@
+{
+  "name": "csem-graph-linker",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "test": "node engine.test.js && node editor.test.js"
+  }
+}

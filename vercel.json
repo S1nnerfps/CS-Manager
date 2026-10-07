@@ -1,5 +1,15 @@
 {
   "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/linker",
+      "destination": "/linker/index.html"
+    },
+    {
+      "source": "/linker/",
+      "destination": "/linker/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/downloads/(.*)",

@@ -1,0 +1,63 @@
+'use strict';
+const assert = require('node:assert/strict');
+const E = require('./engine.js'), G = require('./editor.js');
+let assertions = 0, sequence = 0;
+const makeId = () => `test_${++sequence}`;
+const equal = (a, b, message) => { assert.deepEqual(a, b, message); assertions++; };
+const check = (value, message) => { assert.ok(value, message); assertions++; };
+
+const original = E.sample(), doc = E.copy(original);
+doc.links = doc.links.filter(l => !l.source.startsWith('result:'));
+doc.stages.pop(); doc.matches = doc.matches.filter(m => m.stage === 's1'); doc.results = doc.results.filter(r => r.stage === 's1');
+const withoutNext = E.copy(doc);
+G.syncAdvanceLinks(doc, makeId);
+equal(doc, withoutNext, 'advance slots can await a next stage');
+doc.stages.push(E.copy(original.stages[1]));
+G.syncAdvanceLinks(doc, makeId);
+equal(doc.links.filter(l => l.source.startsWith('result:')).map(l => [l.source, l.target]), ['a0', 'a1', 'a2', 'a3'].map(id => [`result:${id}`, 'start:s2']), 'creating next stage wires all advance slots');
+const synced = E.copy(doc); G.syncAdvanceLinks(doc, makeId);
+equal(doc, synced, 'auto wiring is idempotent and preserves IDs');
+doc.results.find(r => r.id === 'e0').kind = 'advance'; G.syncAdvanceLinks(doc, makeId);
+check(doc.links.some(l => l.source === 'result:e0' && l.target === 'start:s2'), 'new advance type auto wires when next stage already exists');
+check(E.validate(doc).some(i => i.code === 'START_SIZE'), 'auto routes do not silently change existing target capacity');
+doc.results.find(r => r.id === 'a0').kind = 'placement'; G.syncAdvanceLinks(doc, makeId);
+check(!doc.links.some(l => l.source === 'result:a0'), 'settlement removes advance route');
+doc.stages.push({ ...E.copy(original.stages[1]), id: 's3' });
+doc.stages = doc.stages.filter(s => s.id !== 's2'); G.syncAdvanceLinks(doc, makeId);
+check(doc.links.filter(l => l.source.startsWith('result:')).every(l => l.target === 'start:s3'), 'deleted middle stage routes advance to adjacent successor');
+doc.stages.pop(); G.syncAdvanceLinks(doc, makeId);
+check(!doc.links.some(l => l.source.startsWith('result:')), 'deleted last stage leaves no dangling advance links');
+
+const batch = E.sample();
+batch.links = batch.links.filter(l => !['start:s1:0', 'start:s1:7'].includes(l.source));
+const before = E.copy(batch);
+let plan = G.planConnections(batch, ['start:s1:0', 'start:s1:7'], 'match:q1', makeId);
+check(plan.ok); equal(plan.links.length, 2);
+equal(plan.links.map(l => l.source), ['start:s1:0', 'start:s1:7'], 'batch retains selection order');
+equal(batch, before, 'planning legal edges is read-only');
+batch.links.push(...plan.links); equal(E.validate(batch), [], 'batch restores valid graph');
+plan = G.planConnections(batch, ['start:s1:0'], 'match:q2', makeId); check(!plan.ok, 'occupied output rejected');
+const fullBefore = E.copy(batch);
+batch.links = batch.links.filter(l => !['match:q1:win', 'match:q2:win'].includes(l.source));
+const incomplete = E.copy(batch);
+plan = G.planConnections(batch, ['match:q1:win', 'match:q2:win'], 'result:a0', makeId); check(!plan.ok, 'two outputs cannot enter single result');
+equal(batch, incomplete, 'rejected batch writes no partial edge');
+plan = G.planConnections(batch, ['match:q1:win'], 'match:semi1', makeId); check(!plan.ok, 'cross-stage match rejected');
+plan = G.planConnections(batch, ['match:q1:win', 'match:q1:win'], 'match:q1', makeId); check(!plan.ok, 'duplicate output rejected');
+plan = G.planConnections(batch, ['missing'], 'match:q1', makeId); check(!plan.ok, 'missing output rejected');
+plan = G.planConnections(batch, [], 'match:q1', makeId); check(!plan.ok, 'empty batch rejected');
+plan = G.planConnections(batch, ['match:q1:win'], 'match:q1', makeId); check(!plan.ok, 'self-loop/capacity rejected');
+const cyclic = E.copy(fullBefore); cyclic.links = cyclic.links.filter(l => l.source !== 'match:final:win' && l.source !== 'start:s2:0');
+plan = G.planConnections(cyclic, ['match:final:win'], 'match:semi1', makeId); check(!plan.ok && plan.message.includes('环路'), 'cycle rejected before mutation');
+const overflow = E.copy(incomplete); overflow.links = overflow.links.filter(l => l.source !== 'match:q3:win');
+plan = G.planConnections(overflow, ['match:q1:win', 'match:q2:win', 'match:q3:win'], 'match:q1', makeId); check(!plan.ok, 'three outputs cannot enter a match');
+
+equal(G.GRID, G.RESULT_WIDTH / 10, 'grid derives from result width');
+equal(G.snap(44), 47); equal(G.snap(73), 70.5);
+equal(G.snapPosition(-90, -1), { x: 352.5, y: 23.5 }, 'boundary stays on grid');
+equal(G.snapPosition(441, 63), { x: 446.5, y: 70.5 });
+for (const kind of ['match', 'result']) {
+  equal(G.SPAWN[kind].x % G.GRID, 0, 'fixed spawn x on grid');
+  equal(G.SPAWN[kind].y % G.GRID, 0, 'fixed spawn y on grid');
+}
+console.log(`Graph editor: ${assertions} assertions passed.`);
